@@ -9,6 +9,7 @@ import { useWalletStore, selectIsWalletConnected } from "../store/useWalletStore
 import { predictionsApi, ApiError } from "../lib/api-client";
 import { ConnectionStatus } from "../components/ConnectionStatus";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
+import RoundTimeline from "../components/RoundTimeline";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
@@ -115,6 +116,11 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
             <p className="font-medium">{message.text}</p>
           </div>
         )}
+
+        {/* Round State Timeline */}
+        <div className="mb-6">
+          <RoundTimeline />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Center: Prediction controls (Issue: core prediction area) */}
