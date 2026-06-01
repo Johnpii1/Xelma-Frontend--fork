@@ -10,6 +10,7 @@ import { predictionsApi, ApiError } from "../lib/api-client";
 import { ConnectionStatus } from "../components/ConnectionStatus";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import ProfileSummaryCard from "../components/ProfileSummaryCard";
+import LiveGameStatsPanel from "../components/LiveGameStatsPanel";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
@@ -130,19 +131,14 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
             />
           </div>
 
-          {/* Right: Price chart and placeholder */}
+          {/* Right: Price chart and live stats */}
           <div className="lg:col-span-2 flex flex-col gap-6">
             {/* Price Chart */}
             <div className="min-h-[350px] bg-white dark:bg-gray-800 p-6 shadow-sm rounded-xl border border-gray-100 dark:border-gray-700">
               <PriceChart height={280} />
             </div>
 
-            <div className="mt-5 p-4 bg-black/5 rounded-lg text-center">
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                142 Playing Now
-              </p>
-            </div>
+            <LiveGameStatsPanel />
 
             <PredictionHistory userId={publicKey} />
           </div>

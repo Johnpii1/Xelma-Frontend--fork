@@ -2,6 +2,10 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Dashboard from './Dashboard';
 
+function selectFromStore<TStore extends object>(selector: unknown, store: TStore) {
+  return typeof selector === 'function' ? (selector as (state: TStore) => unknown)(store) : store;
+}
+
 // Create proper store mocks
 const mockRoundStore = {
   isRoundActive: true,
@@ -44,15 +48,30 @@ vi.mock('../store/useWalletStore', () => ({
   selectIsWalletConnected: vi.fn((state) => state.status === 'connected' && Boolean(state.publicKey)),
 }));
 
+vi.mock('../hooks/useConnectionStatus', () => ({
+  useConnectionStatus: () => ({
+    status: 'connected',
+    error: null,
+    lastConnected: new Date('2026-01-01T00:00:00.000Z'),
+    reconnectAttempts: 0,
+    isConnected: true,
+    isConnecting: false,
+    isReconnecting: false,
+    isDisconnected: false,
+    reconnect: vi.fn(),
+  }),
+}));
+
 // Mock the API client
 vi.mock('../lib/api-client', () => ({
   predictionsApi: {
     submit: vi.fn(),
   },
   ApiError: class ApiError extends Error {
-    constructor(message: string, public status: number) {
+    constructor(message: string, status: number) {
       super(message);
       this.name = 'ApiError';
+      Object.assign(this, { status });
     }
   },
 }));
@@ -74,8 +93,21 @@ vi.mock('../components/PriceChart', () => ({
   ),
 }));
 
+type PredictionCardMockProps = {
+  isWalletConnected?: boolean;
+  isRoundActive?: boolean;
+  isConnecting?: boolean;
+  isSubmittingPrediction?: boolean;
+  onPrediction?: (prediction: {
+    direction: 'UP';
+    stake: string;
+    exactPrice: string;
+    isLegend: boolean;
+  }) => void;
+};
+
 vi.mock('../components/PredictionCard', () => ({
-  default: (props: any) => {
+  default: (props: PredictionCardMockProps) => {
     const { 
       isWalletConnected, 
       isRoundActive, 
@@ -118,6 +150,10 @@ vi.mock('../components/PredictionHistory', () => ({
       Prediction History
     </div>
   ),
+}));
+
+vi.mock('../components/LiveGameStatsPanel', () => ({
+  default: () => <section data-testid="live-game-stats-panel">Live Game Stats</section>,
 }));
 
 import { useRoundStore } from '../store/useRoundStore';
@@ -187,20 +223,21 @@ describe('Dashboard', () => {
       expect(predictionHistory).toHaveAttribute('data-user-id', 'GTEST123');
     });
 
-    it('shows player count', () => {
+    it('shows the live game stats panel instead of the static player placeholder', () => {
       render(<Dashboard />);
 
-      expect(screen.getByText('142 Playing Now')).toBeInTheDocument();
+      expect(screen.getByTestId('live-game-stats-panel')).toBeInTheDocument();
+      expect(screen.queryByText('142 Playing Now')).not.toBeInTheDocument();
     });
   });
 
   describe('wallet connection states', () => {
     it('handles disconnected wallet', () => {
       // Mock disconnected wallet state
-      vi.mocked(useWalletStore).mockImplementation((selector: any) => {
+      vi.mocked(useWalletStore).mockImplementation(((selector: unknown) => {
         const store = { ...mockWalletStore, status: 'idle', publicKey: null };
-        return typeof selector === 'function' ? selector(store) : store;
-      });
+        return selectFromStore(selector, store);
+      }) as never);
 
       render(<Dashboard />);
 
@@ -214,10 +251,10 @@ describe('Dashboard', () => {
     });
 
     it('handles connecting wallet state', () => {
-      vi.mocked(useWalletStore).mockImplementation((selector: any) => {
+      vi.mocked(useWalletStore).mockImplementation(((selector: unknown) => {
         const store = { ...mockWalletStore, status: 'connecting' };
-        return typeof selector === 'function' ? selector(store) : store;
-      });
+        return selectFromStore(selector, store);
+      }) as never);
 
       render(<Dashboard />);
 
@@ -226,10 +263,10 @@ describe('Dashboard', () => {
     });
 
     it('handles checking wallet state', () => {
-      vi.mocked(useWalletStore).mockImplementation((selector: any) => {
+      vi.mocked(useWalletStore).mockImplementation(((selector: unknown) => {
         const store = { ...mockWalletStore, status: 'checking' };
-        return typeof selector === 'function' ? selector(store) : store;
-      });
+        return selectFromStore(selector, store);
+      }) as never);
 
       render(<Dashboard />);
 
@@ -240,10 +277,10 @@ describe('Dashboard', () => {
 
   describe('round states', () => {
     it('handles inactive round', () => {
-      vi.mocked(useRoundStore).mockImplementation((selector: any) => {
+      vi.mocked(useRoundStore).mockImplementation(((selector: unknown) => {
         const store = { ...mockRoundStore, isRoundActive: false };
-        return typeof selector === 'function' ? selector(store) : store;
-      });
+        return selectFromStore(selector, store);
+      }) as never);
 
       render(<Dashboard />);
 
@@ -314,8 +351,8 @@ describe('Dashboard', () => {
     });
 
     it('shows submitting state during prediction', async () => {
-      let resolveSubmit: (value: any) => void;
-      const submitPromise = new Promise((resolve) => {
+      let resolveSubmit: (value: { id: string }) => void;
+      const submitPromise = new Promise<{ id: string }>((resolve) => {
         resolveSubmit = resolve;
       });
       vi.mocked(predictionsApi.submit).mockReturnValue(submitPromise);
@@ -376,9 +413,11 @@ describe('Dashboard', () => {
       const submitButton = screen.getByTestId('submit-prediction');
       fireEvent.click(submitButton);
 
-      await waitFor(() => {
-        expect(screen.getByText('Prediction Sent!')).toBeInTheDocument();
+      await act(async () => {
+        await Promise.resolve();
       });
+
+      expect(screen.getByText('Prediction Sent!')).toBeInTheDocument();
 
       // Fast-forward all timers
       await act(async () => {
@@ -401,19 +440,21 @@ describe('Dashboard', () => {
       
       // First submission
       fireEvent.click(submitButton);
-      await waitFor(() => {
-        expect(screen.getByText('Prediction Sent!')).toBeInTheDocument();
+      await act(async () => {
+        await Promise.resolve();
       });
+      expect(screen.getByText('Prediction Sent!')).toBeInTheDocument();
 
       // Second submission before timeout
       await act(async () => {
         vi.advanceTimersByTime(1000);
       });
       fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Prediction Sent!')).toBeInTheDocument();
+      await act(async () => {
+        await Promise.resolve();
       });
+
+      expect(screen.getByText('Prediction Sent!')).toBeInTheDocument();
 
       // Should still be visible after original 3 seconds
       await act(async () => {
@@ -433,7 +474,7 @@ describe('Dashboard', () => {
     it('clears message immediately when new prediction starts', async () => {
       vi.mocked(predictionsApi.submit)
         .mockResolvedValueOnce({ id: 'pred-1' })
-        .mockResolvedValueOnce({ id: 'pred-2' });
+        .mockReturnValueOnce(new Promise(() => {}));
 
       render(<Dashboard />);
 
@@ -539,8 +580,8 @@ describe('Dashboard', () => {
     });
 
     it('handles prediction submission when wallet becomes disconnected', async () => {
-      let resolveSubmit: (value: any) => void;
-      const submitPromise = new Promise((resolve) => {
+      let resolveSubmit: (value: { id: string }) => void;
+      const submitPromise = new Promise<{ id: string }>((resolve) => {
         resolveSubmit = resolve;
       });
       vi.mocked(predictionsApi.submit).mockReturnValue(submitPromise);
@@ -551,10 +592,10 @@ describe('Dashboard', () => {
       fireEvent.click(submitButton);
 
       // Simulate wallet disconnection during submission
-      vi.mocked(useWalletStore).mockImplementation((selector: any) => {
+      vi.mocked(useWalletStore).mockImplementation(((selector: unknown) => {
         const store = { ...mockWalletStore, status: 'idle', publicKey: null };
-        return typeof selector === 'function' ? selector(store) : store;
-      });
+        return selectFromStore(selector, store);
+      }) as never);
 
       rerender(<Dashboard />);
 
