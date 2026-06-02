@@ -12,14 +12,18 @@ interface LoadingProps {
 export const LoadingState = ({ message = "Loading content...", className, variant = "spinner", skeletonLines = 3, dark = false }: LoadingProps) => {
     if (variant === "skeleton") {
         return (
-            <div className={cn("space-y-3 p-4", className)}>
+            <div className={cn("space-y-4 p-4", className)}>
+                <div className={cn("h-4 rounded-full", dark ? "bg-white/10" : "bg-gray-200 dark:bg-gray-700")} style={{ width: "50%" }} />
                 {Array.from({ length: skeletonLines }).map((_, i) => (
                     <div
                         key={i}
-                        className={cn("h-4 rounded animate-pulse", dark ? "bg-white/20" : "bg-gray-200 dark:bg-gray-700")}
+                        className={cn("h-4 rounded animate-pulse", dark ? "bg-white/10" : "bg-gray-200 dark:bg-gray-700")}
                         style={{ width: i === skeletonLines - 1 ? "75%" : "100%" }}
                     />
                 ))}
+                {message ? (
+                    <p className={cn("mt-2 text-sm", dark ? "text-white/70" : "text-gray-500 dark:text-gray-400")}>{message}</p>
+                ) : null}
             </div>
         );
     }

@@ -37,10 +37,10 @@ export default function EndRoundModal({ isOpen, onClose, result }: EndRoundModal
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/90 backdrop-blur-md animate-fade-in z-40" />
+        <Dialog.Overlay className="fixed inset-0 bg-black/90 backdrop-blur-md motion-safe:animate-fade-in z-40" />
 
         <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
-          <div className="w-full max-w-md animate-scale-in">
+          <div className="w-full max-w-md motion-safe:animate-scale-in">
             <div className={`relative overflow-hidden rounded-2xl border ${
               isWin ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'
             }`}>

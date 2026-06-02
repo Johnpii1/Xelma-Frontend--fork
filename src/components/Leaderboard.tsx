@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
+import clsx from 'clsx';
 import Avatar from '../assets/avatar.svg';
 import { leaderboardApi, type LeaderboardEntry } from '../lib/api-client';
+import { useWalletStore, selectIsWalletConnected } from '../store/useWalletStore';
 import { LoadingState, ErrorState, EmptyState } from './ui/StatusStates';
 
 interface LeaderboardUser {
@@ -42,15 +44,69 @@ const Leaderboard = () => {
     void fetchLeaderboard();
   }, []);
 
+  const walletPublicKey = useWalletStore((s) => s.publicKey);
+  const isWalletConnected = useWalletStore(selectIsWalletConnected);
+
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => b.xlm - a.xlm);
   }, [users]);
+
+  const currentUser = useMemo(() => {
+    if (!walletPublicKey) return null;
+    return sortedUsers.find((user) => user.id === walletPublicKey) ?? null;
+  }, [sortedUsers, walletPublicKey]);
+
+  const currentUserRank = currentUser
+    ? sortedUsers.findIndex((user) => user.id === currentUser.id) + 1
+    : null;
+
+  const walletShortAddress = walletPublicKey
+    ? `${walletPublicKey.slice(0, 4)}...${walletPublicKey.slice(-4)}`
+    : 'Your wallet';
 
   const topThree = sortedUsers.slice(0, 3);
   const restUsers = sortedUsers.slice(3);
   const rank1 = topThree[0];
   const rank2 = topThree[1];
   const rank3 = topThree[2];
+
+  const leaderboardRows = restUsers.map((user, index) => {
+    const isCurrent = currentUser?.id === user.id;
+    const rowClassName = clsx(
+      'flex flex-col items-center gap-3 md:flex-row md:justify-between md:gap-0 rounded-2xl p-4 shadow-sm transition-all duration-300',
+      isCurrent
+        ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800'
+        : 'bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 hover:shadow-md hover:border-[#2C4BFD]/30 dark:hover:border-[#2C4BFD]/50 transform hover:-translate-y-0.5'
+    );
+
+    return (
+      <li key={user.id} className={rowClassName}>
+        <div className="flex items-center gap-6 w-full justify-center md:justify-start">
+          <span className="text-gray-400 dark:text-gray-500 font-bold text-lg w-8 text-center tabular-nums">
+            {index + 4}
+          </span>
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-transparent group-hover:border-[#2C4BFD]/20">
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <span className="font-bold text-[#292D32] dark:text-gray-200 text-lg">
+            {user.name}
+          </span>
+        </div>
+        <div className="text-center md:text-right w-full md:w-auto mt-2 md:mt-0 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl">
+          <span className="font-bold text-[#2C4BFD] text-lg tabular-nums">
+            {user.xlm.toLocaleString()}
+          </span>
+          <span className="text-xs font-semibold text-blue-400 ml-1.5 uppercase tracking-wider">
+            XLM
+          </span>
+        </div>
+      </li>
+    );
+  });
 
   if (loading) {
     return (
@@ -79,6 +135,36 @@ const Leaderboard = () => {
       <h1 className="text-3xl font-bold text-[#292D32] dark:text-white text-center mb-16 tracking-tight">
         Leaderboard
       </h1>
+
+      {isWalletConnected && (
+        <div className="mb-8 rounded-3xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm lg:sticky lg:top-24 lg:z-20">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-gray-500 dark:text-gray-400">
+                Current wallet summary
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#292D32] dark:text-white">
+                {currentUser ? currentUser.name : walletShortAddress}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                {currentUser ? `Rank #${currentUserRank}` : 'Unranked'}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {currentUser
+                  ? `${currentUser.xlm.toLocaleString()} XLM`
+                  : 'Predictions will place you on the leaderboard.'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            {currentUser
+              ? 'Keep making accurate predictions to move up the leaderboard.'
+              : 'Your connected wallet has not yet appeared on the leaderboard. Continue playing to earn a rank.'}
+          </div>
+        </div>
+      )}
 
       {/* Podium Section */}
       <div className="flex flex-col md:flex-row items-end justify-center gap-6 mb-16 mt-24">
@@ -167,36 +253,7 @@ const Leaderboard = () => {
       {/* Ranked List */}
       {restUsers.length > 0 ? (
         <ul className="space-y-4 max-w-3xl mx-auto">
-          {restUsers.map((user, index) => (
-            <li
-              key={user.id}
-              className="flex flex-col items-center gap-3 md:flex-row md:justify-between md:gap-0 bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-100 dark:border-gray-700/50 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#2C4BFD]/30 dark:hover:border-[#2C4BFD]/50 transition-all duration-300 transform hover:-translate-y-0.5"
-            >
-              <div className="flex items-center gap-6 w-full justify-center md:justify-start">
-                <span className="text-gray-400 dark:text-gray-500 font-bold text-lg w-8 text-center tabular-nums">
-                  {index + 4}
-                </span>
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-transparent group-hover:border-[#2C4BFD]/20">
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="font-bold text-[#292D32] dark:text-gray-200 text-lg">
-                  {user.name}
-                </span>
-              </div>
-              <div className="text-center md:text-right w-full md:w-auto mt-2 md:mt-0 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl">
-                <span className="font-bold text-[#2C4BFD] text-lg tabular-nums">
-                  {user.xlm.toLocaleString()}
-                </span>
-                <span className="text-xs font-semibold text-blue-400 ml-1.5 uppercase tracking-wider">
-                  XLM
-                </span>
-              </div>
-            </li>
-          ))}
+          {leaderboardRows}
         </ul>
       ) : sortedUsers.length === 0 ? (
         <EmptyState
