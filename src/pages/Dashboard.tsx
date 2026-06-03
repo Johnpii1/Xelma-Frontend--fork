@@ -11,6 +11,7 @@ import { ConnectionStatus } from "../components/ConnectionStatus";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import { HudStatusRow } from "../components/hud/HudStatusRow";
 import ProfileSummaryCard from "../components/ProfileSummaryCard";
+import LiveGameStatsPanel from "../components/LiveGameStatsPanel";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
@@ -134,11 +135,20 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
             />
           </div>
 
+
+          {/* Right: Price chart and live stats */}
           {/* Price chart + prediction history */}
+
           <div className="lg:col-span-2 flex flex-col gap-6">
             <div className="min-h-[350px] bg-white dark:bg-gray-800 p-6 shadow-sm rounded-xl border border-gray-100 dark:border-gray-700">
               <PriceChart height={280} />
             </div>
+
+
+            <LiveGameStatsPanel />
+
+
+
             <PredictionHistory userId={publicKey} />
           </div>
         </div>
