@@ -8,12 +8,15 @@ import Leaderboard from "./components/Leaderboard";
 import RouteProgressBar from "./components/RouteProgressBar";
 import { Toaster } from "sonner";
 import Dashboard from "./pages/Dashboard";
+import Landing from "./pages/Landing";
 import LearnPage from "./pages/Learn";
 import Connect from "./pages/Connect";
 import GameShell from "./components/layout/GameShell";
+import { useWalletStore } from "./store/useWalletStore";
 
 function App() {
   const [showNewsRibbon, setShowNewsRibbon] = useState(true);
+  const isWalletConnected = useWalletStore((s) => s.publicKey !== null && s.publicKey !== "");
 
   return (
     <ThemeProvider>
@@ -26,7 +29,13 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={<Dashboard showNewsRibbon={showNewsRibbon} />}
+            element={
+              isWalletConnected ? (
+                <Dashboard showNewsRibbon={showNewsRibbon} />
+              ) : (
+                <Landing showNewsRibbon={showNewsRibbon} />
+              )
+            }
           />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/learn" element={<LearnPage />} />
