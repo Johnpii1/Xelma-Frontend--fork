@@ -131,6 +131,18 @@
   animation: slideDown 0.4s ease;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .news-ribbon,
+  .news-ribbon__scroll {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .news-ribbon__scroll {
+    transform: translateX(0) !important;
+  }
+}
+
 /* Mobile adjustments */
 @media (max-width: 640px) {
   .news-ribbon {

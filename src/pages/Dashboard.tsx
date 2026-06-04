@@ -2,13 +2,19 @@ import { useEffect, useState, useRef } from "react";
 import { ChatSidebar } from "../components/ChatSidebar";
 import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
+import EndRoundModal from "../components/EndRoundModal";
 import type { PredictionData } from "../components/PredictionControls";
+import type { Round } from "../lib/api-client";
 import { useRoundStore } from "../store/useRoundStore";
 import PredictionHistory from "../components/PredictionHistory";
 import { useWalletStore, selectIsWalletConnected } from "../store/useWalletStore";
 import { predictionsApi, ApiError } from "../lib/api-client";
 import { ConnectionStatus } from "../components/ConnectionStatus";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
+import RoundTimeline from "../components/RoundTimeline";
+import { HudStatusRow } from "../components/hud/HudStatusRow";
+import ProfileSummaryCard from "../components/ProfileSummaryCard";
+import LiveGameStatsPanel from "../components/LiveGameStatsPanel";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
@@ -22,6 +28,8 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
     (s) => s.status === "connecting" || s.status === "checking"
   );
   const publicKey = useWalletStore((s) => s.publicKey);
+  const resolvedRound = useRoundStore((state) => state.resolvedRound);
+  const dismissResolvedRound = useRoundStore((state) => state.dismissResolvedRound);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -46,6 +54,40 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
       }
     };
   }, []);
+
+  const getEndRoundResult = (round: Round | null) => {
+    const defaultTip = 'Stay tuned for the next round.';
+
+    if (!round) {
+      return {
+        isWin: false,
+        amount: 0,
+        tip: defaultTip,
+      };
+    }
+
+    const isWin = typeof round.isWin === 'boolean'
+      ? round.isWin
+      : String(round.outcome ?? round.result ?? '').toLowerCase() === 'win';
+
+    const amount = typeof round.netChange === 'number'
+      ? round.netChange
+      : typeof round.profit === 'number'
+      ? round.profit
+      : typeof round.score === 'number'
+      ? round.score
+      : 0;
+
+    const tip = typeof round.tip === 'string'
+      ? round.tip
+      : typeof round.note === 'string'
+      ? round.note
+      : defaultTip;
+
+    return { isWin, amount, tip };
+  };
+
+  const endRoundResult = getEndRoundResult(resolvedRound);
 
   const handlePrediction = async (data: PredictionData) => {
     setIsSubmitting(true);
@@ -88,6 +130,9 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
       <ChatSidebar showNewsRibbon={showNewsRibbon} />
 
       <div className="flex-1 ml-0 md:ml-80 transition-[margin] duration-300 ease-in-out p-4 lg:p-6">
+        {/* HUD status row */}
+        <HudStatusRow playerCount={142} className="mb-4" />
+
         {/* Connection Status Banner */}
         {(!isSocketConnected || (sseConnection && sseConnection.status !== 'connected')) && (
           <div className="mb-4">
@@ -116,9 +161,15 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
           </div>
         )}
 
+        {/* Round State Timeline */}
+        <div className="mb-6">
+          <RoundTimeline />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Center: Prediction controls (Issue: core prediction area) */}
+          {/* Prediction controls */}
           <div className="dashboard__center lg:col-span-1 flex flex-col gap-6">
+            <ProfileSummaryCard />
             <PredictionCard
               isWalletConnected={isWalletConnected}
               isRoundActive={isRoundActive}
@@ -128,24 +179,29 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
             />
           </div>
 
-          {/* Right: Price chart and placeholder */}
+
+          {/* Right: Price chart and live stats */}
+          {/* Price chart + prediction history */}
+
           <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* Price Chart */}
             <div className="min-h-[350px] bg-white dark:bg-gray-800 p-6 shadow-sm rounded-xl border border-gray-100 dark:border-gray-700">
               <PriceChart height={280} />
             </div>
 
-            <div className="mt-5 p-4 bg-black/5 rounded-lg text-center">
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                142 Playing Now
-              </p>
-            </div>
+
+            <LiveGameStatsPanel />
+
+
 
             <PredictionHistory userId={publicKey} />
           </div>
         </div>
       </div>
+      <EndRoundModal
+        isOpen={Boolean(resolvedRound)}
+        onClose={dismissResolvedRound}
+        result={endRoundResult}
+      />
     </div>
   );
 };

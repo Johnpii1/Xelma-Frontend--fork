@@ -3,10 +3,8 @@
   border-radius: 12px;
   padding: 32px 28px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  max-width: 500px;
-  margin: 0 auto;
+  width: 100%;
   transition: all 0.3s ease;
-  margin: 140px 20px 40px;
 }
 
 .dark .prediction-card {

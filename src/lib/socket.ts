@@ -208,6 +208,26 @@ export const socketService = {
     return subscriptionManager.addSubscription("notification", callback);
   },
 
+  onLiveGameStats(callback: (data: unknown) => void) {
+    const unsubscribers = [
+      subscriptionManager.addSubscription("game:stats", callback),
+      subscriptionManager.addSubscription("game:stats:update", callback),
+      subscriptionManager.addSubscription("stats:update", callback),
+      subscriptionManager.addSubscription("round:stats", callback),
+    ];
+
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  },
+
+  onPredictionCreated(callback: (data: unknown) => void) {
+    const unsubscribers = [
+      subscriptionManager.addSubscription("prediction:created", callback),
+      subscriptionManager.addSubscription("prediction:submitted", callback),
+    ];
+
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  },
+
   // Emits with connection check
   joinRound(roundId: string) {
     if (!socket.connected) {
