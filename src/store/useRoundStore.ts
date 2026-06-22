@@ -21,6 +21,7 @@ interface SSEConnectionState {
 
 interface RoundStore {
   activeRound: Round | null;
+  resolvedRound: Round | null;
   isRoundActive: boolean;
   isLoading: boolean;
   error: string | null;
@@ -28,6 +29,7 @@ interface RoundStore {
   fetchActiveRound: () => Promise<void>;
   subscribeToRoundEvents: () => () => void;
   reconnectSSE: () => void;
+  dismissResolvedRound: () => void;
 }
 
 function parseJson(value: string): unknown {
@@ -129,6 +131,7 @@ const sseReconnectionManager = new SSEReconnectionManager();
 
 export const useRoundStore = create<RoundStore>((set, get) => ({
   activeRound: null,
+  resolvedRound: null,
   isRoundActive: false,
   isLoading: false,
   error: null,
@@ -144,7 +147,12 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
     try {
       const activeRound = await roundsApi.getActive();
-      set({ activeRound, isRoundActive: !!activeRound, isLoading: false });
+      set({
+        activeRound,
+        resolvedRound: null,
+        isRoundActive: Boolean(activeRound && activeRound.status !== 'resolved'),
+        isLoading: false,
+      });
     } catch (error) {
       const normalized = normalizeApiError(error, 'Failed to fetch active round');
       set({
@@ -172,6 +180,13 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     // Re-subscribe will create a new connection
     state.subscribeToRoundEvents();
   },
+  dismissResolvedRound: () => {
+    set((state) => ({
+      resolvedRound: null,
+      activeRound: state.activeRound?.status === 'resolved' ? null : state.activeRound,
+      isRoundActive: state.activeRound?.status === 'resolved' ? false : state.isRoundActive,
+    }));
+  },
 
   subscribeToRoundEvents: () => {
     const createConnection = (): EventSource => {
@@ -188,6 +203,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const startedRound = getEventRound(payload);
         set({
           activeRound: startedRound,
+          resolvedRound: null,
           isRoundActive: true,
           error: null,
         });
@@ -197,6 +213,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const resolvedRound = getEventRound(payload);
         set({
           activeRound: resolvedRound,
+          resolvedRound,
           isRoundActive: false,
           error: null,
         });
@@ -228,7 +245,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       stream.onmessage = handleGenericMessage;
 
       stream.onopen = () => {
-        set((state) => ({
+        set(() => ({
           sseConnection: {
             status: 'connected',
             error: null,

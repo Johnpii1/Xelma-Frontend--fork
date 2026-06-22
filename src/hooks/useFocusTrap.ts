@@ -14,6 +14,7 @@ type UseFocusTrapOptions = {
   onEscape?: () => void;
   initialFocusRef?: RefObject<HTMLElement | null>;
   restoreFocus?: boolean;
+  restoreFocusRef?: RefObject<HTMLElement | null>;
 };
 
 function getFocusable(container: HTMLElement) {
@@ -29,6 +30,7 @@ export function useFocusTrap(
     onEscape,
     initialFocusRef,
     restoreFocus = true,
+    restoreFocusRef,
   }: UseFocusTrapOptions,
 ) {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -49,7 +51,7 @@ export function useFocusTrap(
 
     return () => {
       if (!restoreFocus) return;
-      const previouslyFocused = previouslyFocusedRef.current;
+      const previouslyFocused = restoreFocusRef?.current ?? previouslyFocusedRef.current;
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [active, containerRef, initialFocusRef, restoreFocus]);

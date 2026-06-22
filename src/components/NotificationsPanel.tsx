@@ -38,7 +38,7 @@ const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
       id={id}
       ref={panelRef}
       role="dialog"
-      aria-modal="false"
+      aria-modal="true"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
       tabIndex={-1}

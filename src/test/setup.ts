@@ -2,8 +2,59 @@ import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
-// Mock global fetch
-global.fetch = vi.fn();
+// Mock global fetch (return empty JSON by default for component mount effects)
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => [],
+});
+
+// jsdom does not implement scrollIntoView (used by ChatSidebar)
+Element.prototype.scrollIntoView = vi.fn();
+
+// Required by lightweight-charts / fancy-canvas in jsdom
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// jsdom canvas stub for lightweight-charts
+HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+  canvas: document.createElement('canvas'),
+  clearRect: vi.fn(),
+  fillRect: vi.fn(),
+  getImageData: vi.fn(),
+  putImageData: vi.fn(),
+  createImageData: vi.fn(),
+  setTransform: vi.fn(),
+  drawImage: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  measureText: vi.fn(() => ({ width: 0 })),
+  transform: vi.fn(),
+  rect: vi.fn(),
+  arc: vi.fn(),
+  scale: vi.fn(),
+  rotate: vi.fn(),
+  translate: vi.fn(),
+  clip: vi.fn(),
+  fillText: vi.fn(),
+  strokeText: vi.fn(),
+})) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 
 // Proper EventSource mock implementation
 class MockEventSource {

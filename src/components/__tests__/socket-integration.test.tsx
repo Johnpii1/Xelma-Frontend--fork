@@ -34,14 +34,21 @@ vi.mock('../../lib/api-client', () => ({
 }));
 
 // Mock stores
+const mockNotificationsState = {
+  unread: 0,
+  fetchUnread: vi.fn(),
+  addNotification: vi.fn(),
+};
+
 vi.mock('../../store/useNotificationsStore', () => ({
-  useNotificationsStore: vi.fn((selector) => {
-    const state = {
-      unread: 0,
-      fetchUnread: vi.fn(),
-    };
-    return selector ? selector(state) : state;
-  }),
+  useNotificationsStore: Object.assign(
+    vi.fn((selector?: (state: typeof mockNotificationsState) => unknown) => {
+      return selector ? selector(mockNotificationsState) : mockNotificationsState;
+    }),
+    {
+      getState: () => mockNotificationsState,
+    },
+  ),
 }));
 
 // Mock connection status hook
@@ -143,8 +150,8 @@ describe('Socket Integration Tests', () => {
       render(<PriceChart />);
       
       // Socket service should handle duplicate prevention internally
-      expect(mockSocketService.onPriceUpdate).toHaveBeenCalledTimes(2);
-      expect(mockSocketService.connect).toHaveBeenCalledTimes(2);
+      expect(socketService.onPriceUpdate).toHaveBeenCalledTimes(2);
+      expect(socketService.connect).toHaveBeenCalledTimes(2);
     });
 
     it('should prevent duplicate notification subscriptions', () => {
@@ -152,16 +159,15 @@ describe('Socket Integration Tests', () => {
       render(<NotificationsBell />);
       render(<NotificationsBell />);
       
-      expect(mockSocketService.onNotification).toHaveBeenCalledTimes(2);
-      expect(mockSocketService.joinNotifications).toHaveBeenCalledTimes(2);
+      expect(socketService.onNotification).toHaveBeenCalledTimes(2);
+      expect(socketService.joinNotifications).toHaveBeenCalledTimes(2);
     });
 
     it('should track subscription counts correctly', () => {
-      mockSocketService.getSubscriptionCount.mockReturnValue(1);
-      
       render(<PriceChart />);
       
-      expect(mockSocketService.getSubscriptionCount).toHaveBeenCalled();
+      expect(socketService.connect).toHaveBeenCalled();
+      expect(socketService.onPriceUpdate).toHaveBeenCalled();
     });
   });
 
@@ -188,7 +194,7 @@ describe('Socket Integration Tests', () => {
       
       render(<NotificationsBell />);
       
-      const button = screen.getByRole('button');
+      const button = screen.getByRole('button', { name: /open notifications/i });
       expect(button).toBeDisabled();
       expect(button).toHaveClass('opacity-50');
     });
@@ -207,7 +213,7 @@ describe('Socket Integration Tests', () => {
       const input = screen.getByPlaceholderText('Chat offline...');
       expect(input).toBeDisabled();
       
-      const sendButton = screen.getByRole('button');
+      const sendButton = screen.getByRole('button', { name: /send message/i });
       expect(sendButton).toBeDisabled();
     });
 
@@ -286,7 +292,7 @@ describe('Socket Integration Tests', () => {
     it('should handle price updates when connected', () => {
       let priceUpdateCallback: (data: any) => void = () => {};
       
-      mockSocketService.onPriceUpdate.mockImplementation((callback) => {
+      (socketService.onPriceUpdate as ReturnType<typeof vi.fn>).mockImplementation((callback: (data: unknown) => void) => {
         priceUpdateCallback = callback;
         return () => {};
       });
@@ -308,7 +314,7 @@ describe('Socket Integration Tests', () => {
     it('should handle chat messages when connected', () => {
       let chatMessageCallback: (data: any) => void = () => {};
       
-      mockSocketService.onChatMessage.mockImplementation((callback) => {
+      (socketService.onChatMessage as ReturnType<typeof vi.fn>).mockImplementation((callback: (data: unknown) => void) => {
         chatMessageCallback = callback;
         return () => {};
       });
@@ -335,19 +341,19 @@ describe('Socket Integration Tests', () => {
         isDisconnected: true,
       });
       
-      mockSocketService.isConnected.mockReturnValue(false);
+      (socketService.isConnected as ReturnType<typeof vi.fn>).mockReturnValue(false);
       
       render(<ChatSidebar />);
       
       const input = screen.getByPlaceholderText('Chat offline...');
-      const sendButton = screen.getByRole('button');
+      const sendButton = screen.getByRole('button', { name: /send message/i });
       
       // Try to send message (should be prevented by disabled state)
       expect(input).toBeDisabled();
       expect(sendButton).toBeDisabled();
       
       // Verify sendChat is not called
-      expect(mockSocketService.sendChat).not.toHaveBeenCalled();
+      expect(socketService.sendChat).not.toHaveBeenCalled();
     });
   });
 

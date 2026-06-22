@@ -1,13 +1,12 @@
-<svg width="64" height="64" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="gradFav" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#2C4BFD"/>
-      <stop offset="100%" stop-color="#6366F1"/>
+    <linearGradient id="g" x1="4" y1="36" x2="36" y2="4" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="45%" stop-color="#2C4BFD"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
     </linearGradient>
   </defs>
-  <!-- Squircle background -->
-  <rect width="512" height="512" rx="112" ry="112" fill="url(#gradFav)"/>
-  <!-- Simplified X mark for favicon legibility -->
-  <path d="M 140 140 C 205 225, 307 287, 372 372" stroke="white" stroke-width="64" stroke-linecap="round" fill="none"/>
-  <path d="M 372 140 C 307 225, 205 287, 140 372" stroke="white" stroke-width="64" stroke-linecap="round" fill="none"/>
+  <rect width="40" height="40" rx="9" fill="url(#g)"/>
+  <path d="M11 11 L20 20 L29 11" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M11 29 L20 20 L29 29" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>

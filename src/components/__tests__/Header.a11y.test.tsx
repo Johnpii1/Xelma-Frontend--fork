@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import Header from '../Header';
@@ -42,5 +42,20 @@ describe('Header accessibility', () => {
   it('exposes the home control with an accessible name', () => {
     renderHeader();
     expect(screen.getByRole('link', { name: /xelma home/i })).toBeInTheDocument();
+  });
+
+  it('traps focus in the mobile menu and closes on Escape', async () => {
+    renderHeader();
+
+    const toggleButton = screen.getByRole('button', { name: /open menu/i });
+    fireEvent.click(toggleButton);
+
+    const mobileNavDialog = await screen.findByRole('dialog', { name: /mobile navigation/i });
+    const firstNavLink = within(mobileNavDialog).getByRole('link', { name: /home/i });
+    await waitFor(() => expect(firstNavLink).toHaveFocus());
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(toggleButton).toHaveFocus());
+    expect(screen.queryByRole('dialog', { name: /mobile navigation/i })).not.toBeInTheDocument();
   });
 });

@@ -34,7 +34,9 @@ class ConnectionStatusStore {
 
   subscribe(listener: (state: ConnectionState) => void) {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 }
 
@@ -46,7 +48,7 @@ export const socket: Socket = io(SOCKET_URL, {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  maxReconnectionAttempts: 5,
+  reconnectionAttempts: 5,
   timeout: 20000,
   auth: (cb: (data: { token: string | null }) => void) => {
     const { jwt } = useAuthStore.getState();
@@ -206,6 +208,26 @@ export const socketService = {
 
   onNotification(callback: (data: any) => void) {
     return subscriptionManager.addSubscription("notification", callback);
+  },
+
+  onLiveGameStats(callback: (data: unknown) => void) {
+    const unsubscribers = [
+      subscriptionManager.addSubscription("game:stats", callback),
+      subscriptionManager.addSubscription("game:stats:update", callback),
+      subscriptionManager.addSubscription("stats:update", callback),
+      subscriptionManager.addSubscription("round:stats", callback),
+    ];
+
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  },
+
+  onPredictionCreated(callback: (data: unknown) => void) {
+    const unsubscribers = [
+      subscriptionManager.addSubscription("prediction:created", callback),
+      subscriptionManager.addSubscription("prediction:submitted", callback),
+    ];
+
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   },
 
   // Emits with connection check

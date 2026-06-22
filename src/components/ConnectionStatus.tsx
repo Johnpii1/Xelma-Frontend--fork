@@ -1,4 +1,3 @@
-import React from 'react';
 import { useConnectionStatus } from '../hooks/useConnectionStatus';
 
 interface ConnectionStatusProps {
@@ -16,8 +15,6 @@ export function ConnectionStatus({
     reconnectAttempts, 
     reconnect,
     isConnected,
-    isConnecting,
-    isReconnecting,
     isDisconnected
   } = useConnectionStatus();
 

@@ -31,6 +31,7 @@ describe('useRoundStore', () => {
     vi.resetAllMocks();
     useRoundStore.setState({
       activeRound: null,
+      resolvedRound: null,
       isRoundActive: false,
       isLoading: false,
       error: null,
@@ -154,7 +155,7 @@ describe('useRoundStore', () => {
     });
 
     it('handles round:resolved event', () => {
-      useRoundStore.setState({ activeRound: mockRound, isRoundActive: true });
+      useRoundStore.setState({ activeRound: mockRound, resolvedRound: null, isRoundActive: true });
       const unsubscribe = useRoundStore.getState().subscribeToRoundEvents();
       
       const eventSourceInstance = (global as any).getLatestEventSourceInstance();
@@ -164,10 +165,21 @@ describe('useRoundStore', () => {
 
       const state = useRoundStore.getState();
       expect(state.activeRound).toEqual(mockResolvedRound);
+      expect(state.resolvedRound).toEqual(mockResolvedRound);
       expect(state.isRoundActive).toBe(false);
       expect(state.error).toBeNull();
 
       unsubscribe();
+    });
+
+    it('dismisses resolved round and resets active state', () => {
+      useRoundStore.setState({ activeRound: mockResolvedRound, resolvedRound: mockResolvedRound, isRoundActive: false });
+      useRoundStore.getState().dismissResolvedRound();
+
+      const state = useRoundStore.getState();
+      expect(state.resolvedRound).toBeNull();
+      expect(state.activeRound).toBeNull();
+      expect(state.isRoundActive).toBe(false);
     });
 
     it('handles generic message events with event type', () => {

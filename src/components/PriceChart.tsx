@@ -341,7 +341,7 @@ const PriceChart = ({ height = 300 }: PriceChartProps) => {
     };
   }, []); // Empty dependency array ensures this runs only once
 
-  const { isConnected, isDisconnected } = useConnectionStatus();
+  const { isConnected } = useConnectionStatus();
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -362,8 +362,8 @@ const PriceChart = ({ height = 300 }: PriceChartProps) => {
           </div>
         </div>
         
-        {/* Connection status for disconnected state */}
-        {isDisconnected && (
+        {/* Connection status when live updates are unavailable */}
+        {!isConnected && (
           <ConnectionStatus className="mr-4" />
         )}
         <p className={`text-sm font-semibold tabular-nums ${isPositive ? "text-green-500" : "text-red-500"}`}>
@@ -449,11 +449,13 @@ const PriceChart = ({ height = 300 }: PriceChartProps) => {
           )}
 
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 text-center bg-[#0a1929]/80 backdrop-blur-sm rounded-xl">
+            <div className="absolute inset-0 flex items-center justify-center p-4 text-center bg-[#0a1929]/90 backdrop-blur-sm rounded-xl">
               <LoadingState
                 message="Loading live price data..."
-                variant="spinner"
+                variant="skeleton"
+                skeletonLines={5}
                 dark={true}
+                className="max-w-md w-full"
               />
             </div>
           )}

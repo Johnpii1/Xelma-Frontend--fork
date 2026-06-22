@@ -6,20 +6,27 @@ import NotificationsBell from '../NotificationsBell';
 import { useNotificationsStore } from '../../store/useNotificationsStore';
 import * as api from '../../lib/api-client';
 
-// Mock socket with a triggerable handler
-let socketHandlers: Record<string, ((payload: unknown) => void) | undefined> = {};
+let notificationHandler: ((payload: unknown) => void) | undefined;
+
 vi.mock('../../lib/socket', () => ({
-  appSocket: {
-    joinChannel: vi.fn(),
-    leaveChannel: vi.fn(),
-    on: vi.fn((channel: string, event: string, cb: (p: unknown) => void) => {
-      const key = `${channel}:${event}`;
-      socketHandlers[key] = cb;
+  socketService: {
+    connect: vi.fn(),
+    onNotification: vi.fn((cb: (payload: unknown) => void) => {
+      notificationHandler = cb;
       return () => {
-        delete socketHandlers[key];
+        notificationHandler = undefined;
       };
     }),
+    joinNotifications: vi.fn(),
   },
+}));
+
+vi.mock('../../hooks/useConnectionStatus', () => ({
+  useConnectionStatus: () => ({
+    status: 'connected',
+    isConnected: true,
+    isDisconnected: false,
+  }),
 }));
 
 vi.mock('../../lib/api-client');
@@ -27,7 +34,7 @@ vi.mock('../../lib/api-client');
 describe('Notifications', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    socketHandlers = {};
+    notificationHandler = undefined;
     // clear store between tests to avoid state leakage
     useNotificationsStore.getState().clear();
   });
@@ -88,7 +95,7 @@ describe('Notifications', () => {
     // trigger incoming notification
     const payload = { id: 'r1', title: 'Live Event', message: 'An event happened', createdAt: new Date().toISOString() };
     act(() => {
-      socketHandlers['join:notifications:notification']?.(payload);
+      notificationHandler?.(payload);
     });
 
     // badge should update to 1

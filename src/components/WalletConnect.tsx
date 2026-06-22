@@ -13,6 +13,7 @@ const WalletConnect = () => {
     balance,
     status,
     errorMessage,
+    errorCode,
     networkMismatch,
     connect,
     disconnect,
@@ -29,9 +30,12 @@ const WalletConnect = () => {
     ? `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`
     : '';
 
+  const isAuthFailure = status === 'connected' && errorCode === 'AUTH_FAILED';
+  const isPendingAuth = status === 'connected' && !isAuthenticated && !errorMessage;
+
   if (publicKey && status === 'connected') {
     return (
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex flex-col gap-3 sm:gap-4">
         {networkMismatch && (
           <div
             className="hidden md:flex items-center text-red-600 dark:text-red-400 text-sm font-medium bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded"
@@ -42,47 +46,92 @@ const WalletConnect = () => {
           </div>
         )}
 
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-[#BEC7FE] dark:border-gray-700 rounded-lg shadow-sm">
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            {balance ? (
-              <>
-                <span className="sr-only">Balance: </span>
-                {balance}
-              </>
+        <div className="flex flex-col sm:flex-row items-stretch gap-3">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-[#BEC7FE] dark:border-gray-700 rounded-lg shadow-sm">
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {balance ? (
+                <>
+                  <span className="sr-only">Balance: </span>
+                  {balance}
+                </>
+              ) : (
+                <>
+                  <span className="sr-only">Balance unavailable</span>
+                  <span aria-hidden>—</span>
+                </>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 sm:gap-2 p-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg pr-2 sm:pr-3">
+            <div
+              className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs shrink-0"
+              aria-hidden
+            >
+              <Wallet className="w-4 h-4" />
+            </div>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums max-w-[7rem] sm:max-w-none truncate">
+              {shortAddress}
+            </span>
+            {isAuthenticated ? (
+              <ShieldCheck className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" aria-label="Signed in to server" />
             ) : (
-              <>
-                <span className="sr-only">Balance unavailable</span>
-                <span aria-hidden>—</span>
-              </>
+              <span className="sr-only">Not signed in to backend</span>
             )}
-          </span>
+            <button
+              type="button"
+              onClick={disconnect}
+              className={clsx(
+                'shrink-0 p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20',
+                focusRing
+              )}
+              aria-label="Disconnect wallet"
+            >
+              <LogOut className="w-4 h-4" aria-hidden />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2 p-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg pr-2 sm:pr-3">
-          <div
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs shrink-0"
-            aria-hidden
-          >
-            <Wallet className="w-4 h-4" />
+        {isPendingAuth && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 dark:border-blue-900/30 dark:bg-blue-950/50 px-4 py-3 text-sm text-blue-900 dark:text-blue-100">
+            Wallet connected. Finalizing backend authentication. Please wait a moment before making predictions.
           </div>
-          <span className="text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums max-w-[7rem] sm:max-w-none truncate">
-            {shortAddress}
-          </span>
-          {isAuthenticated && (
-            <ShieldCheck className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" aria-label="Signed in to server" />
-          )}
-          <button
-            type="button"
-            onClick={disconnect}
-            className={clsx(
-              'shrink-0 p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20',
-              focusRing
-            )}
-            aria-label="Disconnect wallet"
-          >
-            <LogOut className="w-4 h-4" aria-hidden />
-          </button>
-        </div>
+        )}
+
+        {isAuthFailure && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/50 px-4 py-3 text-sm text-red-900 dark:text-red-100" role="alert">
+            <p className="font-semibold">Backend authentication failed.</p>
+            <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+              Your wallet is connected, but the server sign-in did not complete. Retry or disconnect and reconnect.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  clearError();
+                  void connect();
+                }}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-[#2C4BFD] text-white hover:bg-[#1a3bf0]',
+                  focusRing
+                )}
+              >
+                <RefreshCw className="w-4 h-4" aria-hidden />
+                Retry sign-in
+              </button>
+              <button
+                type="button"
+                onClick={disconnect}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30',
+                  focusRing
+                )}
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -100,7 +100,7 @@ describe('NotificationsPanel', () => {
 
       const panel = screen.getByRole('dialog');
       expect(panel).toHaveAttribute('id', 'notifications-panel');
-      expect(panel).toHaveAttribute('aria-modal', 'false');
+      expect(panel).toHaveAttribute('aria-modal', 'true');
       expect(panel).toHaveAttribute('aria-labelledby', 'notifications-panel-title');
       expect(panel).toHaveAttribute('aria-describedby', 'notifications-panel-description');
 
@@ -385,7 +385,7 @@ describe('NotificationsPanel', () => {
       render(<NotificationsPanel {...defaultProps} />);
 
       const dialog = screen.getByRole('dialog');
-      expect(dialog).toHaveAttribute('aria-modal', 'false');
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
       expect(dialog).toHaveAttribute('aria-labelledby', 'notifications-panel-title');
     });
 
