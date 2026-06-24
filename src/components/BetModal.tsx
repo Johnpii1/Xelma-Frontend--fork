@@ -1,166 +1,244 @@
-// ISSUE: Wire place_bet() to Xelma TypeScript bindings (xelma-contract)
-// ISSUE: Wire claim_winnings() to contract
+import { useState } from 'react';
+import { useWalletStore } from '../store/useWalletStore';
+import { useAuthStore } from '../store/useAuthStore';
+import { place_bet, place_precision_prediction } from '../lib/xelma-contract';
+import { predictionsApi } from '../lib/api-client';
 
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import type { MockRound } from '../types';
-import { mockUserStats } from '../data/mockData';
-import CountdownTimer from './CountdownTimer';
-
-interface BetModalProps {
-  round: MockRound | null;
-  open: boolean;
-  onClose: () => void;
+export interface PredictionData {
+  direction: 'UP' | 'DOWN';
+  stake: string;
+  isLegend: boolean;
+  exactPrice?: string;
 }
 
-export default function BetModal({ round, open, onClose }: BetModalProps) {
-  const [direction, setDirection] = useState<'UP' | 'DOWN' | null>(null);
-  const [precisionPrice, setPrecisionPrice] = useState('');
-  const [amount, setAmount] = useState('100');
+interface BetModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  predictionData: PredictionData | null;
+  onSuccess?: (txHash: string) => void;
+}
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (open) window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+type Step = 'confirm' | 'wallet_required' | 'preparing' | 'signing' | 'submitting' | 'syncing' | 'success' | 'error';
 
-  if (!open || !round) return null;
+export default function BetModal({ isOpen, onClose, predictionData, onSuccess }: BetModalProps) {
+  const status = useWalletStore((s) => s.status);
+  const publicKey = useWalletStore((s) => s.publicKey);
+  const connect = useWalletStore((s) => s.connect);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const parsedAmount = parseFloat(amount) || 0;
-  const potentialReturn =
-    round.mode === 'updown' ? parsedAmount * 1.5 : parsedAmount * 3;
+  const isConnected = status === 'connected' && !!publicKey;
+  const initialStep = (!isConnected || !isAuthenticated) ? 'wallet_required' : 'confirm';
 
-  const canSubmit =
-    parsedAmount > 0 &&
-    parsedAmount <= mockUserStats.balance &&
-    (round.mode === 'updown' ? direction !== null : precisionPrice.trim() !== '');
+  const [step, setStep] = useState<Step>(initialStep);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [txHash, setTxHash] = useState('');
 
-  const handleConfirm = () => {
-    if (!canSubmit) return;
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      const currentConnected = status === 'connected' && !!publicKey;
+      const targetStep = (!currentConnected || !isAuthenticated) ? 'wallet_required' : 'confirm';
+      setStep(targetStep);
+      setErrorMsg('');
+      setTxHash('');
+    }
+  }
 
-    // TODO: Wire to Xelma TypeScript bindings — client.place_bet() or client.place_precision_prediction()
-    const mins = Math.floor(round.closesInSeconds / 60);
-    const secs = String(round.closesInSeconds % 60).padStart(2, '0');
-    toast.success(`Prediction submitted — round resolves in ${mins}:${secs}`);
-    onClose();
+  if (!isOpen || !predictionData) return null;
+
+  const handleConnectAndAuth = async () => {
+    try {
+      await connect();
+      // Auth store logic can follow
+    } catch (err) {
+      console.error('Connection failed:', err);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!publicKey) {
+      setStep('wallet_required');
+      return;
+    }
+
+    try {
+      const updateStatus = (s: 'preparing' | 'signing' | 'submitting') => {
+        setStep(s);
+      };
+
+      let result;
+      if (predictionData.isLegend && predictionData.exactPrice) {
+        result = await place_precision_prediction(
+          publicKey,
+          predictionData.direction,
+          predictionData.stake,
+          predictionData.exactPrice,
+          updateStatus
+        );
+      } else {
+        result = await place_bet(
+          publicKey,
+          predictionData.direction,
+          predictionData.stake,
+          updateStatus
+        );
+      }
+
+      setTxHash(result.txHash);
+      setStep('syncing');
+
+      // Submit to backend
+      await predictionsApi.submit({
+        direction: predictionData.direction,
+        stake: predictionData.stake,
+        isLegend: predictionData.isLegend,
+        exactPrice: predictionData.exactPrice,
+      });
+
+      setStep('success');
+      if (onSuccess) {
+        onSuccess(result.txHash);
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('Prediction submission error:', error);
+      setErrorMsg(error.message || 'An unexpected error occurred');
+      setStep('error');
+    }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="prediction-modal-title"
-    >
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        aria-label="Close prediction modal"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="glass-card relative z-10 w-full max-w-md rounded-2xl bg-gray-900 border border-gray-800 p-6 text-white shadow-2xl">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-400 hover:text-white"
+          aria-label="Close"
+        >
+          ✕
+        </button>
 
-      <div className="glass-card relative z-10 w-full max-w-md rounded-2xl p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="prediction-modal-title" className="text-xl font-bold text-white">
-              {round.asset} — {round.mode === 'updown' ? 'UP/DOWN' : 'Precision'}
-            </h2>
-            <p className="mt-1 text-sm text-gray-400">
-              Resolves in <CountdownTimer initialSeconds={round.closesInSeconds} />
+        {step === 'wallet_required' && (
+          <div className="text-center py-4">
+            <h3 className="text-lg font-bold text-red-400 mb-2">Wallet & Auth Required</h3>
+            <p className="text-gray-400 text-sm mb-6">
+              You need to connect and authenticate your Stellar wallet to submit predictions.
             </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-
-        {round.mode === 'updown' ? (
-          <div className="mt-6 grid grid-cols-2 gap-3">
             <button
-              type="button"
-              onClick={() => setDirection('UP')}
-              className={`rounded-xl py-4 text-lg font-bold transition-all ${
-                direction === 'UP'
-                  ? 'bg-green-500 text-white ring-2 ring-green-400'
-                  : 'bg-white/5 text-gray-300 hover:bg-green-500/20'
-              }`}
+              onClick={handleConnectAndAuth}
+              className="w-full py-3 bg-[#2C4BFD] hover:bg-[#2C4BFD]/80 rounded-xl font-semibold transition"
             >
-              UP ↑
+              Connect & Authenticate
             </button>
-            <button
-              type="button"
-              onClick={() => setDirection('DOWN')}
-              className={`rounded-xl py-4 text-lg font-bold transition-all ${
-                direction === 'DOWN'
-                  ? 'bg-rose-500 text-white ring-2 ring-rose-400'
-                  : 'bg-white/5 text-gray-300 hover:bg-rose-500/20'
-              }`}
-            >
-              DOWN ↓
-            </button>
-          </div>
-        ) : (
-          <div className="mt-6">
-            <label htmlFor="precision-price" className="text-xs font-semibold uppercase text-gray-400">
-              Target price
-            </label>
-            <input
-              id="precision-price"
-              type="number"
-              step="0.0001"
-              value={precisionPrice}
-              onChange={(e) => setPrecisionPrice(e.target.value)}
-              placeholder={String(round.startPrice)}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#2C4BFD]"
-            />
           </div>
         )}
 
-        <div className="mt-6">
-          <label htmlFor="stake-amount" className="text-xs font-semibold uppercase text-gray-400">
-            Stake
-          </label>
-          <div className="relative mt-2">
-            <input
-              id="stake-amount"
-              type="number"
-              min="1"
-              max={mockUserStats.balance}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-16 text-white outline-none focus:border-[#2C4BFD]"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-cyan-300">
-              vXLM
-            </span>
+        {step === 'confirm' && (
+          <div>
+            <h3 className="text-lg font-bold mb-4" id="prediction-modal-title">Confirm Prediction</h3>
+            <div className="space-y-3 bg-gray-850 p-4 rounded-xl border border-gray-800 mb-6">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Mode</span>
+                <span className="font-semibold">
+                  {predictionData.isLegend ? 'Legend Mode (Precision)' : 'UP/DOWN Match'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Direction</span>
+                <span className={`font-bold ${predictionData.direction === 'UP' ? 'text-green-400' : 'text-red-400'}`}>
+                  {predictionData.direction}
+                </span>
+              </div>
+              {predictionData.isLegend && predictionData.exactPrice && (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Target Price</span>
+                  <span className="font-semibold text-yellow-400">${predictionData.exactPrice}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-800 pt-3">
+                <span className="text-gray-400">Stake</span>
+                <span className="font-bold text-cyan-400">{predictionData.stake} XLM</span>
+              </div>
+            </div>
+            <button
+              onClick={handleConfirm}
+              className="w-full py-3.5 bg-green-600 hover:bg-green-500 rounded-xl font-bold transition"
+            >
+              Confirm
+            </button>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
-            Practice balance: {mockUserStats.balance.toLocaleString()} vXLM
-          </p>
-        </div>
+        )}
 
-        <p className="mt-4 text-sm text-gray-300">
-          Estimated payout:{' '}
-          <span className="font-bold text-cyan-300">
-            {potentialReturn.toLocaleString(undefined, { maximumFractionDigits: 2 })} vXLM
-          </span>
-        </p>
+        {(step === 'preparing' || step === 'signing' || step === 'submitting' || step === 'syncing') && (
+          <div className="text-center py-8">
+            <div className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h3 className="text-lg font-semibold">
+              {step === 'preparing' && 'Preparing Transaction...'}
+              {step === 'signing' && 'Waiting for Freighter Signature...'}
+              {step === 'submitting' && 'Submitting Transaction to Network...'}
+              {step === 'syncing' && 'Syncing Prediction to Backend...'}
+            </h3>
+            <p className="text-gray-400 text-sm mt-2">
+              Please check your wallet interface if prompted.
+            </p>
+          </div>
+        )}
 
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={handleConfirm}
-          className="btn-primary mt-6 w-full rounded-xl py-3.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Submit Prediction
-        </button>
+        {step === 'success' && (
+          <div className="text-center py-6">
+            <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+              ✓
+            </div>
+            <h3 className="text-xl font-bold mb-2">Prediction Submitted!</h3>
+            <p className="text-gray-400 text-sm mb-6">
+              Your prediction has been successfully written on-chain and registered.
+            </p>
+            <div className="space-y-3">
+              <a
+                href={`https://stellarexpert.org/tx/${txHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold transition"
+              >
+                View on StellarExpert
+              </a>
+              <button
+                onClick={onClose}
+                className="w-full py-3 border border-gray-800 hover:bg-gray-850 rounded-xl font-semibold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'error' && (
+          <div className="text-center py-6">
+            <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+              ✕
+            </div>
+            <h3 className="text-xl font-bold mb-2">Transaction Failed</h3>
+            <p className="text-red-400 text-sm mb-6 px-4 break-words">
+              {errorMsg}
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={handleConfirm}
+                className="w-full py-3 bg-[#2C4BFD] hover:bg-[#2C4BFD]/80 rounded-xl font-semibold transition"
+              >
+                Retry
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full py-3 border border-gray-800 hover:bg-gray-850 rounded-xl font-semibold transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

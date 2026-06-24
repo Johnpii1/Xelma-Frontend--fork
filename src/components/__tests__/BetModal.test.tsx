@@ -91,7 +91,8 @@ describe('BetModal Component', () => {
   });
 
   it('executes smart contract and backend submit on confirmation', async () => {
-    vi.mocked(place_bet).mockImplementation(async () => {
+    vi.mocked(place_bet).mockImplementation(async (pubkey, dir, stake, onStatus) => {
+      if (onStatus) onStatus('preparing');
       await new Promise((resolve) => setTimeout(resolve, 50));
       return {
         txHash: 'tx_hash_123',

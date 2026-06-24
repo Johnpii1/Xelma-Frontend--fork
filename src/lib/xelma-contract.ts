@@ -1,4 +1,4 @@
-import { rpc, Contract, TransactionBuilder, BASE_FEE, Networks, Address, nativeToScVal } from '@stellar/stellar-sdk';
+import { rpc, Contract, TransactionBuilder, BASE_FEE, Networks, Address, nativeToScVal, xdr } from '@stellar/stellar-sdk';
 import { signTransaction } from '@stellar/freighter-api';
 
 const RPC_URL = import.meta.env.VITE_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
@@ -31,11 +31,7 @@ async function pollTransaction(txHash: string): Promise<ContractTransactionResul
       }
 
       if (txResult.status === 'FAILED') {
-        throw new Error(`Transaction failed on-chain: ${txResult.resultResultMetaXdr || 'unknown failure reason'}`);
-      }
-
-      if (txResult.status !== 'PENDING') {
-        throw new Error(`Transaction ended with unexpected status: ${txResult.status}`);
+        throw new Error(`Transaction failed on-chain: ${txResult.resultMetaXdr || 'unknown failure reason'}`);
       }
     } catch (err) {
       // If error is not a pending response, propagate it
@@ -56,7 +52,7 @@ async function pollTransaction(txHash: string): Promise<ContractTransactionResul
 async function executeContractCall(
   userAddress: string,
   functionName: string,
-  args: any[],
+  args: xdr.ScVal[],
   onStatus?: (status: 'preparing' | 'signing' | 'submitting') => void
 ): Promise<ContractTransactionResult> {
   // 1. Fetch source account from RPC
@@ -95,7 +91,7 @@ async function executeContractCall(
   // 4. Prepare transaction with simulation footprint results
   let preparedTx;
   try {
-    preparedTx = rpcServer.prepareTransaction(tx, simulation);
+    preparedTx = await rpcServer.prepareTransaction(tx);
   } catch (err) {
     console.error('Failed to prepare transaction footprint:', err);
     throw new Error('Failed to assemble transaction layout with simulated resources.');
@@ -105,9 +101,8 @@ async function executeContractCall(
   let signedResult;
   try {
     onStatus?.('signing');
-    const isTestnet = NETWORK_PASSPHRASE === Networks.TESTNET;
     signedResult = await signTransaction(preparedTx.toXDR(), {
-      network: isTestnet ? 'TESTNET' : 'PUBLIC',
+      networkPassphrase: NETWORK_PASSPHRASE,
     });
   } catch (err) {
     console.error('Freighter sign transaction error:', err);
@@ -140,7 +135,7 @@ async function executeContractCall(
   }
 
   if (submission.status === 'ERROR') {
-    throw new Error(`Transaction rejected by network: ${submission.errorResultXdr || 'unknown error'}`);
+    throw new Error(`Transaction rejected by network: ${submission.errorResult || 'unknown error'}`);
   }
 
   // 7. Poll for transaction completion
@@ -161,7 +156,7 @@ export async function place_bet(
 ): Promise<ContractTransactionResult> {
   const amountStroops = BigInt(Math.round(parseFloat(stake) * 10_000_000));
   const args = [
-    new Address(userAddress),
+    new Address(userAddress).toScVal(),
     nativeToScVal(direction, { type: 'symbol' }),
     nativeToScVal(amountStroops, { type: 'u128' }),
   ];
@@ -188,7 +183,7 @@ export async function place_precision_prediction(
   const exactPriceScaled = BigInt(Math.round(parseFloat(exactPrice) * 10_000));
 
   const args = [
-    new Address(userAddress),
+    new Address(userAddress).toScVal(),
     nativeToScVal(direction, { type: 'symbol' }),
     nativeToScVal(amountStroops, { type: 'u128' }),
     nativeToScVal(exactPriceScaled, { type: 'u64' }),

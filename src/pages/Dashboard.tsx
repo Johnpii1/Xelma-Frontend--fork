@@ -1,35 +1,21 @@
 import { useEffect, useState, useRef } from "react";
-import { ChatSidebar } from "../components/ChatSidebar";
 import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
 import type { PredictionData } from "../components/PredictionControls";
 import BetModal from "../components/BetModal";
 import { useRoundStore } from "../store/useRoundStore";
-import PredictionHistory from "../components/PredictionHistory";
 import { useWalletStore, selectIsWalletConnected } from "../store/useWalletStore";
-import { predictionsApi, ApiError } from "../lib/api-client";
-import { ConnectionStatus } from "../components/ConnectionStatus";
-import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import { Link } from "react-router-dom";
 
-interface DashboardProps {
-  showNewsRibbon?: boolean;
-}
-
-const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
+const Dashboard = () => {
   const isRoundActive = useRoundStore((state) => state.isRoundActive);
-  const sseConnection = useRoundStore((state) => state.sseConnection);
   const isWalletConnected = useWalletStore(selectIsWalletConnected);
   const isWalletConnecting = useWalletStore(
     (s) => s.status === "connecting" || s.status === "checking"
   );
-  const publicKey = useWalletStore((s) => s.publicKey);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBetModalOpen, setIsBetModalOpen] = useState(false);
   const [pendingPrediction, setPendingPrediction] = useState<PredictionData | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const timeoutRef = useRef<number | null>(null);
-  const { isConnected: isSocketConnected } = useConnectionStatus();
 
   useEffect(() => {
     const { fetchActiveRound, subscribeToRoundEvents } = useRoundStore.getState();
@@ -71,7 +57,7 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
               isWalletConnected={isWalletConnected}
               isRoundActive={isRoundActive}
               isConnecting={isWalletConnecting}
-              isSubmittingPrediction={isSubmitting || isBetModalOpen}
+              isSubmittingPrediction={isBetModalOpen}
               onPrediction={handlePrediction}
             />
           </div>
@@ -91,7 +77,7 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
           setPendingPrediction(null);
         }}
         predictionData={pendingPrediction}
-        onSuccess={(txHash) => {
+        onSuccess={(txHash: string) => {
           console.log("Prediction confirmed on-chain. TxHash:", txHash);
         }}
       />
