@@ -3,6 +3,7 @@ import { ChatSidebar } from "../components/ChatSidebar";
 import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
 import type { PredictionData } from "../components/PredictionControls";
+import BetModal from "../components/BetModal";
 import { useRoundStore } from "../store/useRoundStore";
 import PredictionHistory from "../components/PredictionHistory";
 import { useWalletStore, selectIsWalletConnected } from "../store/useWalletStore";
@@ -23,6 +24,8 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
   );
   const publicKey = useWalletStore((s) => s.publicKey);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBetModalOpen, setIsBetModalOpen] = useState(false);
+  const [pendingPrediction, setPendingPrediction] = useState<PredictionData | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const { isConnected: isSocketConnected } = useConnectionStatus();
@@ -47,40 +50,9 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
     };
   }, []);
 
-  const handlePrediction = async (data: PredictionData) => {
-    setIsSubmitting(true);
-    setMessage(null);
-
-    // Clear any existing timeout
-    if (timeoutRef.current !== null) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    try {
-      await predictionsApi.submit({
-        direction: data.direction,
-        stake: data.stake,
-        exactPrice: data.exactPrice,
-        isLegend: data.isLegend,
-      });
-
-      setMessage({ type: 'success', text: 'Prediction Sent!' });
-      
-      // Clear message after 3 seconds
-      timeoutRef.current = window.setTimeout(() => {
-        setMessage(null);
-        timeoutRef.current = null;
-      }, 3000);
-    } catch (error) {
-      const errorMessage = error instanceof ApiError 
-        ? error.message 
-        : 'Failed to submit prediction. Please try again.';
-      
-      setMessage({ type: 'error', text: errorMessage });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handlePrediction = (data: PredictionData) => {
+    setPendingPrediction(data);
+    setIsBetModalOpen(true);
   };
 
   return (
@@ -123,7 +95,7 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
               isWalletConnected={isWalletConnected}
               isRoundActive={isRoundActive}
               isConnecting={isWalletConnecting}
-              isSubmittingPrediction={isSubmitting}
+              isSubmittingPrediction={isSubmitting || isBetModalOpen}
               onPrediction={handlePrediction}
             />
           </div>
@@ -146,6 +118,18 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
           </div>
         </div>
       </div>
+
+      <BetModal
+        isOpen={isBetModalOpen}
+        onClose={() => {
+          setIsBetModalOpen(false);
+          setPendingPrediction(null);
+        }}
+        predictionData={pendingPrediction}
+        onSuccess={(txHash) => {
+          console.log("Prediction confirmed on-chain. TxHash:", txHash);
+        }}
+      />
     </div>
   );
 };
