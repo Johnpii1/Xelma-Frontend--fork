@@ -57,7 +57,7 @@ const LearnPage = () => {
 
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-12">
+            <div className="xelma-grid-bg min-h-screen relative flex items-center justify-center">
                 <LoadingState message="Fetching the latest alpha..." className="min-h-[60vh]" />
             </div>
         );
@@ -65,91 +65,96 @@ const LearnPage = () => {
 
     if (error) {
         return (
-            <div className="container mx-auto px-4 py-12">
-                <ErrorState message={error} onRetry={fetchData} className="min-h-[60vh]" />
+            <div className="xelma-grid-bg min-h-screen relative flex items-center justify-center px-4">
+                <ErrorState message={error} onRetry={fetchData} className="min-h-[60vh] max-w-lg w-full" />
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 lg:py-12 max-w-7xl animate-in fade-in duration-700">
-            <header className="mb-12 text-center">
-                <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-[#2C4BFD]">
-                    <GraduationCap size={32} aria-hidden />
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tight">
-                    Xelma Academy
-                </h1>
-                <p className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-                    Master the art of prediction. Learn strategies, understand the Stellar ecosystem, and level up your trading game.
-                </p>
-            </header>
+        <div className="xelma-grid-bg min-h-screen relative text-[#F3F4F6] px-4 py-8 lg:py-12">
+            {/* Ambient glows */}
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(44,75,253,0.15),_transparent_60%)]" aria-hidden />
+            <div className="pointer-events-none absolute -left-24 top-32 h-80 w-80 rounded-full bg-cyan-500/5 blur-3xl" aria-hidden />
+            <div className="pointer-events-none absolute -right-24 top-16 h-96 w-96 rounded-full bg-[#2C4BFD]/8 blur-3xl" aria-hidden />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Main Content: Guides */}
-                <div className="lg:col-span-8 space-y-8">
-                    <section aria-labelledby="learn-guides-heading">
-                        <div className="flex items-center gap-3 mb-8">
-                            <BookMarked className="text-[#2C4BFD] shrink-0" size={24} aria-hidden />
-                            <h2 id="learn-guides-heading" className="text-2xl font-bold text-gray-900 dark:text-white">
-                                Expert Guides
-                            </h2>
-                        </div>
+            <div className="relative mx-auto max-w-7xl animate-in fade-in duration-700">
+                <header className="mb-12 text-center">
+                    <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-xelma-blue/10 border border-xelma-blue/20 text-xelma-teal">
+                        <GraduationCap size={32} aria-hidden />
+                    </div>
+                    <h1 className="hero-headline text-4xl lg:text-5xl font-black mb-4 tracking-tight">
+                        Xelma <span className="hero-headline-accent">Academy</span>
+                    </h1>
+                    <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+                        Master the art of prediction. Learn strategies, understand the Stellar ecosystem, and level up your trading game.
+                    </p>
+                </header>
 
-                        {guides.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {guides.map((guide) => (
-                                    <GuideCard key={guide.id} guide={guide} />
-                                ))}
-                            </div>
-                        ) : (
-                            <EmptyState
-                                title="No guides available"
-                                message="Our experts are currently drafting new content. Check back soon for the latest strategies!"
-                                icon={<Telescope className="h-12 w-12 text-gray-300 dark:text-gray-700 mb-4" />}
-                                className="bg-gray-50 dark:bg-gray-900/50"
-                            />
-                        )}
-                    </section>
-                </div>
-
-                {/* Sidebar: Tip of the day */}
-                <aside className="lg:col-span-4" aria-label="Tips and community">
-                    <div className="sticky top-32 space-y-6">
-                        <section aria-labelledby="learn-tip-heading">
-                            <div className="flex items-center gap-3 mb-6">
-                                <h2 id="learn-tip-heading" className="text-xl font-bold text-gray-900 dark:text-white">
-                                    Quick Alpha
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Main Content: Guides */}
+                    <div className="lg:col-span-8 space-y-8">
+                        <section aria-labelledby="learn-guides-heading">
+                            <div className="flex items-center gap-3 mb-8">
+                                <BookMarked className="text-xelma-teal shrink-0" size={24} aria-hidden />
+                                <h2 id="learn-guides-heading" className="text-2xl font-bold text-white">
+                                    Expert Guides
                                 </h2>
                             </div>
 
-                            {tip ? (
-                                <TipCard tip={tip} />
+                            {guides.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {guides.map((guide) => (
+                                        <GuideCard key={guide.id} guide={guide} />
+                                    ))}
+                                </div>
                             ) : (
                                 <EmptyState
-                                    title="No tip today"
-                                    message="No specific tip for the moment. Keep your eyes on the chart!"
-                                    className="bg-blue-50/50 dark:bg-blue-900/5 py-8"
-                                    icon={<BookMarked className="h-8 w-8 text-blue-200 dark:text-blue-900/20 mb-3" />}
+                                    title="No guides available"
+                                    message="Our experts are currently drafting new content. Check back soon for the latest strategies!"
+                                    icon={<Telescope className="h-12 w-12 text-gray-600 mb-4" />}
                                 />
                             )}
                         </section>
-
-                        {/* Additional info box */}
-                        <div className="p-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-                            <h3 className="font-bold mb-2 text-gray-900 dark:text-white">Want to contribute?</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                                Are you an expert in Stellar or prediction markets? Share your knowledge with the community.
-                            </p>
-                            <button
-                                type="button"
-                                className="w-full py-2 px-4 rounded-xl text-sm font-bold border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C4BFD] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-                            >
-                                Apply as Educator
-                            </button>
-                        </div>
                     </div>
-                </aside>
+
+                    {/* Sidebar: Tip of the day */}
+                    <aside className="lg:col-span-4" aria-label="Tips and community">
+                        <div className="sticky top-32 space-y-6">
+                            <section aria-labelledby="learn-tip-heading">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <h2 id="learn-tip-heading" className="text-xl font-bold text-white">
+                                        Quick Alpha
+                                    </h2>
+                                </div>
+
+                                {tip ? (
+                                    <TipCard tip={tip} />
+                                ) : (
+                                    <EmptyState
+                                        title="No tip today"
+                                        message="No specific tip for the moment. Keep your eyes on the chart!"
+                                        icon={<BookMarked className="h-8 w-8 text-gray-600 mb-3" />}
+                                    />
+                                )}
+                            </section>
+
+                            {/* Additional info box */}
+                            <div className="p-6 rounded-2xl glass-card">
+                                <h3 className="font-bold mb-2 text-white">Want to contribute?</h3>
+                                <p className="text-sm text-gray-400 mb-4">
+                                    Are you an expert in Stellar or prediction markets? Share your knowledge with the community.
+                                </p>
+                                <button
+                                    type="button"
+                                    className="btn-ghost w-full py-2.5 px-4 rounded-xl text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-xelma-blue focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0F1A]"
+                                >
+                                    Apply as Educator
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
             </div>
         </div>
     );
