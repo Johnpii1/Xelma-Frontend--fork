@@ -191,3 +191,18 @@ export async function place_precision_prediction(
 
   return executeContractCall(userAddress, 'place_precision_prediction', args, onStatus);
 }
+
+/**
+ * Claims pending winnings for the user.
+ * @param userAddress The public key of the user.
+ */
+export async function claim_winnings(
+  userAddress: string,
+  onStatus?: (status: 'preparing' | 'signing' | 'submitting') => void
+): Promise<ContractTransactionResult> {
+  const args = [
+    new Address(userAddress).toScVal(),
+  ];
+
+  return executeContractCall(userAddress, 'claim_winnings', args, onStatus);
+}
