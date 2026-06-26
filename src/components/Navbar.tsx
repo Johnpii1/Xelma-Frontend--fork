@@ -19,6 +19,7 @@ interface NavLinkItem {
 
 const navLinks: NavLinkItem[] = [
   { label: 'Terminal', to: '/dashboard' },
+  { label: 'Pools', to: '/pools' },
   { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Learn', to: '/learn' },
   { label: 'Profile', to: '/profile' },

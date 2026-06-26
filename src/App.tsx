@@ -13,6 +13,7 @@ const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const LearnPage = lazy(() => import('./pages/Learn'));
 const Connect = lazy(() => import('./pages/Connect'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Pools = lazy(() => import('./pages/Pools'));
 
 function App() {
   return (
@@ -28,14 +29,7 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/learn" element={<LearnPage />} />
             <Route path="/connect" element={<Connect />} />
-            <Route
-              path="/pools"
-              element={
-                <div className="xelma-grid-bg px-4 py-20 text-center text-xl font-bold text-gray-500">
-                  Pools — Coming Soon
-                </div>
-              }
-            />
+            <Route path="/pools" element={<Pools />} />
             <Route
               path="/tournament"
               element={
