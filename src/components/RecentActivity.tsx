@@ -1,3 +1,4 @@
+import { Activity } from 'lucide-react';
 import type { RecentActivityItem } from '../types';
 
 interface RecentActivityProps {
@@ -11,29 +12,43 @@ export default function RecentActivity({ items }: RecentActivityProps) {
         Recent Predictions
       </h2>
 
-      <ul className="mt-4 space-y-3">
-        {items.map((item) => (
-          <li
-            key={item.id}
-            className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3"
-          >
-            <div>
-              <p className="text-sm font-semibold text-white">{item.asset}</p>
-              <p className="text-xs uppercase text-gray-500">{item.mode}</p>
-            </div>
-            <div className="text-right">
-              <p
-                className={`text-sm font-bold ${
-                  item.result === 'Won' ? 'text-green-400' : 'text-rose-400'
-                }`}
-              >
-                {item.result === 'Won' ? 'Correct' : 'Incorrect'}
-              </p>
-              <p className="text-xs text-gray-400">{item.amount} vXLM</p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <div
+          role="status"
+          aria-label="No recent predictions"
+          className="mt-6 flex flex-col items-center gap-3 py-8 text-center"
+        >
+          <Activity className="h-10 w-10 text-gray-600" aria-hidden="true" />
+          <p className="text-sm font-medium text-gray-400">No predictions yet</p>
+          <p className="text-xs text-gray-600">
+            Make your first prediction to see your activity here.
+          </p>
+        </div>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3"
+            >
+              <div>
+                <p className="text-sm font-semibold text-white">{item.asset}</p>
+                <p className="text-xs uppercase text-gray-500">{item.mode}</p>
+              </div>
+              <div className="text-right">
+                <p
+                  className={`text-sm font-bold ${
+                    item.result === 'Won' ? 'text-green-400' : 'text-rose-400'
+                  }`}
+                >
+                  {item.result === 'Won' ? 'Correct' : 'Incorrect'}
+                </p>
+                <p className="text-xs text-gray-400">{item.amount} vXLM</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
