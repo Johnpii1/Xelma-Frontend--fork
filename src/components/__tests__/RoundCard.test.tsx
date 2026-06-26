@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import RoundCard from '../RoundCard';
 import type { MockRound } from '../../types';
 
@@ -80,6 +80,23 @@ describe('RoundCard Component', () => {
     render(<RoundCard round={defaultRound} onSubmitPrediction={vi.fn()} />);
 
     expect(screen.getByText('2:30')).toBeInTheDocument();
+  });
+
+  it('updates the countdown timer text as time passes using fake timers', () => {
+    vi.useFakeTimers();
+    render(<RoundCard round={defaultRound} onSubmitPrediction={vi.fn()} />);
+
+    expect(screen.getByText('2:30')).toBeInTheDocument();
+
+    // Advance time one second at a time to allow React effects to re-register the interval
+    for (let i = 0; i < 10; i++) {
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+    }
+
+    expect(screen.getByText('2:20')).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('enables the submit button when closesInSeconds > 0', () => {
