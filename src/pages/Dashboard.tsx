@@ -3,9 +3,12 @@ import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
 import type { PredictionData } from "../components/PredictionControls";
 import BetModal from "../components/BetModal";
+import EndRoundModal from "../components/EndRoundModal";
 import { useRoundStore } from "../store/useRoundStore";
+import type { Round } from "../lib/api-client";
 import { useWalletStore, selectIsWalletConnected } from "../store/useWalletStore";
 import { Link } from "react-router-dom";
+
 
 const Dashboard = () => {
   const isRoundActive = useRoundStore((state) => state.isRoundActive);
@@ -13,6 +16,8 @@ const Dashboard = () => {
   const isWalletConnecting = useWalletStore(
     (s) => s.status === "connecting" || s.status === "checking"
   );
+  const resolvedRound = useRoundStore((state) => state.resolvedRound);
+  const dismissResolvedRound = useRoundStore((state) => state.dismissResolvedRound);
   const [isBetModalOpen, setIsBetModalOpen] = useState(false);
   const [pendingPrediction, setPendingPrediction] = useState<PredictionData | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -38,6 +43,40 @@ const Dashboard = () => {
     setPendingPrediction(data);
     setIsBetModalOpen(true);
   };
+
+  const getEndRoundResult = (round: Round | null) => {
+    const defaultTip = 'Stay tuned for the next round.';
+
+    if (!round) {
+      return {
+        isWin: false,
+        amount: 0,
+        tip: defaultTip,
+      };
+    }
+
+    const isWin = typeof round.isWin === 'boolean'
+      ? round.isWin
+      : String(round.outcome ?? round.result ?? '').toLowerCase() === 'win';
+
+    const amount = typeof round.netChange === 'number'
+      ? round.netChange
+      : typeof round.profit === 'number'
+      ? round.profit
+      : typeof round.score === 'number'
+      ? round.score
+      : 0;
+
+    const tip = typeof round.tip === 'string'
+      ? round.tip
+      : typeof round.note === 'string'
+      ? round.note
+      : defaultTip;
+
+    return { isWin, amount, tip };
+  };
+
+  const endRoundResult = getEndRoundResult(resolvedRound);
 
   return (
     <div className="xelma-grid-bg min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -80,6 +119,11 @@ const Dashboard = () => {
         onSuccess={(txHash: string) => {
           console.log("Prediction confirmed on-chain. TxHash:", txHash);
         }}
+      />
+      <EndRoundModal
+        isOpen={Boolean(resolvedRound)}
+        onClose={dismissResolvedRound}
+        result={endRoundResult}
       />
     </div>
   );
