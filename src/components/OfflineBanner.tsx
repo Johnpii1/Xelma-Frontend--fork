@@ -45,3 +45,4 @@ export const OfflineBanner = () => {
       </div>
     </div>
   );
+}
