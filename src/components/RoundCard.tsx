@@ -113,8 +113,9 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
 
       <button
         type="button"
+        disabled={round.closesInSeconds <= 0}
         onClick={() => onSubmitPrediction(round)}
-        className="btn-primary mt-5 w-full rounded-xl py-3 text-sm font-bold"
+        className="btn-primary mt-5 w-full rounded-xl py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Submit Prediction
       </button>
