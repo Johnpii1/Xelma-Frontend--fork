@@ -55,7 +55,7 @@ export const GuideCard = ({ guide, className }: GuideCardProps) => {
                 <div className="mt-auto flex items-center justify-between gap-2">
                     <a
                         href={guide.externalLink || "#"}
-                        className="inline-flex items-center gap-1 text-sm font-semibold text-xelma-blue hover:text-xelma-teal hover:underline transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-xelma-teal focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0F1A]"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-cyan-400 hover:text-cyan-300 hover:underline transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-xelma-teal focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0F1A]"
                         aria-label={guide.externalLink ? `Read guide: ${guide.title} (opens in a new tab)` : `Read guide: ${guide.title}`}
                         target={guide.externalLink ? "_blank" : undefined}
                         rel={guide.externalLink ? "noopener noreferrer" : undefined}

@@ -57,16 +57,18 @@ const LearnPage = () => {
 
     if (loading) {
         return (
-            <div className="xelma-grid-bg min-h-screen relative flex items-center justify-center">
-                <LoadingState message="Fetching the latest alpha..." className="min-h-[60vh]" />
+            <div className="xelma-grid-bg min-h-screen relative flex items-center justify-center overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(44,75,253,0.15),_transparent_60%)]" aria-hidden />
+                <LoadingState message="Fetching the latest alpha..." className="min-h-[60vh] relative z-10" />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="xelma-grid-bg min-h-screen relative flex items-center justify-center px-4">
-                <ErrorState message={error} onRetry={fetchData} className="min-h-[60vh] max-w-lg w-full" />
+            <div className="xelma-grid-bg min-h-screen relative flex items-center justify-center px-4 overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(44,75,253,0.15),_transparent_60%)]" aria-hidden />
+                <ErrorState message={error} onRetry={fetchData} className="min-h-[60vh] max-w-lg w-full relative z-10" />
             </div>
         );
     }
@@ -147,7 +149,7 @@ const LearnPage = () => {
                                 </p>
                                 <button
                                     type="button"
-                                    className="btn-ghost w-full py-2.5 px-4 rounded-xl text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-xelma-blue focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0F1A]"
+                                    className="btn-ghost w-full py-2.5 px-4 rounded-xl text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-xelma-teal focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0F1A]"
                                 >
                                     Apply as Educator
                                 </button>
