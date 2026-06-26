@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import RouteFallback from './components/RouteFallback';
 import LazyBoundary from './components/LazyBoundary';
+import { OfflineBanner } from './components/OfflineBanner';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const LegacyDashboard = lazy(() => import('./pages/LegacyDashboard'));
@@ -16,6 +17,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 function App() {
   return (
     <div className="min-h-screen bg-[#0A0F1A] font-sans text-[#F3F4F6]">
+      <OfflineBanner />
       <Navbar />
       <LazyBoundary>
         <Suspense fallback={<RouteFallback />}>
