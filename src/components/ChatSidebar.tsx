@@ -113,15 +113,53 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [onlineCount] = useState(16);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isConnected } = useConnectionStatus();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (force = false) => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    
+    // Auto-scroll if within 100px of the bottom, or if forced
+    if (force || scrollHeight - scrollTop - clientHeight < 100) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Initial auto-scroll or scroll on new messages
+    scrollToBottom(messages.length > 0 && messagesContainerRef.current?.scrollTop === 0);
   }, [messages]);
+
+  // Adjust textarea height automatically
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [inputValue]);
+
+  // Handle body scroll lock and escape key for mobile sheet
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileOpen]);
 
   // Load chat history from REST on mount
   useEffect(() => {
@@ -173,9 +211,12 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
     socketService.sendChat({ content: inputValue.trim() });
 
     setInputValue("");
+    
+    // Force scroll after sending a message
+    setTimeout(() => scrollToBottom(true), 50);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -230,16 +271,16 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
 
       {/* Sidebar / Bottom Sheet */}
       <aside
-        className={`chat-sidebar fixed flex flex-col z-60 transition-all duration-300 ease-in-out border-r
+        className={`chat-sidebar fixed flex flex-col z-60 transition-transform duration-300 border-r
         bg-white dark:bg-[#1f2937] border-gray-100 dark:border-gray-800
         
         /* Desktop: Side Drawer */
-        md:left-0 md:w-80 md:translate-x-0
+        md:left-0 md:w-80 md:translate-x-0 md:transition-none
         ${showNewsRibbon ? "md:top-[128px] lg:md:top-[176px] md:h-[calc(100vh-128px)] lg:md:h-[calc(100vh-176px)]" : "md:top-[80px] lg:md:top-[112px] md:h-[calc(100vh-80px)] lg:md:h-[calc(100vh-112px)]"}
         
         /* Mobile: Bottom Sheet */
-        left-0 bottom-0 w-full h-[60vh] rounded-t-2xl shadow-2xl md:rounded-none md:shadow-none
-        ${isMobileOpen ? "translate-y-0" : "translate-y-full md:translate-y-0 md:translate-x-0"}`}
+        left-0 bottom-0 w-full h-[80dvh] rounded-t-2xl shadow-2xl md:rounded-none md:shadow-none
+        ${isMobileOpen ? "translate-y-0 ease-out" : "translate-y-full ease-in md:translate-y-0 md:translate-x-0"}`}
       >
         {/* Header */}
         <header className="flex items-center justify-between p-4 m-2.5 rounded-lg bg-white dark:bg-[#1f2937] dark:text-white">
@@ -258,7 +299,10 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-2.5 flex flex-col gap-3 bg-[#FAFAFA] dark:bg-gray-900 mx-2.5 p-3.5 rounded-xl">
+        <div 
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto px-2.5 flex flex-col gap-3 bg-[#FAFAFA] dark:bg-gray-900 mx-2.5 p-3.5 rounded-xl overscroll-contain"
+        >
           {messages.map((message) => (
             <div
               key={message.id}
@@ -286,16 +330,17 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-white dark:bg-[#1f2937] border-t border-gray-100 dark:border-gray-800">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white dark:bg-[#1f2937] border-t border-gray-100 dark:border-gray-800 shrink-0">
           {!isConnected && (
             <div className="mb-2 text-xs text-red-500 dark:text-red-400 text-center">
               Chat is offline - messages cannot be sent
             </div>
           )}
-          <div className="flex items-center gap-2 p-2 bg-[#FAFAFA] dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl">
-            <input
-              type="text"
-              className={`flex-1 border-none bg-transparent outline-none font-['DM_Sans'] text-sm text-[#292D32] dark:text-gray-200 placeholder-[#9B9B9B] ${
+          <div className="flex items-end gap-2 p-2 bg-[#FAFAFA] dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              className={`flex-1 border-none bg-transparent outline-none font-['DM_Sans'] text-sm text-[#292D32] dark:text-gray-200 placeholder-[#9B9B9B] resize-none overflow-y-auto py-2 min-h-[36px] max-h-[120px] ${
                 !isConnected ? 'opacity-50' : ''
               }`}
               placeholder={isConnected ? "Type a message..." : "Chat offline..."}
@@ -303,9 +348,10 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
               disabled={!isConnected}
+              aria-label="Message input"
             />
             <button
-              className={`flex items-center justify-center w-9 h-9 p-0 bg-[#2C4BFD] border-none rounded-lg cursor-pointer transition-all duration-200 hover:opacity-90 hover:scale-105 ${
+              className={`flex items-center justify-center min-w-[36px] w-9 h-9 p-0 bg-[#2C4BFD] border-none rounded-lg cursor-pointer transition-all duration-200 hover:opacity-90 hover:scale-105 shrink-0 ${
                 !isConnected ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               disabled={!isConnected}
