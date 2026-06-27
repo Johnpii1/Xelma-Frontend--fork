@@ -106,8 +106,19 @@ const Dashboard = () => {
 
         {!isLoading && !isRoundActive && (
           <EmptyState
-            title="No active round"
-            description="Check back soon for the next prediction round."
+            title="No Active Rounds"
+            description="Learn how the game works or refresh to check for new rounds."
+            action={
+              <button
+                type="button"
+                className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
+                onClick={() => {
+                  void useRoundStore.getState().fetchActiveRound();
+                }}
+              >
+                Refresh
+              </button>
+            }
           />
         )}
 
