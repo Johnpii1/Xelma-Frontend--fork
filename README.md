@@ -113,13 +113,11 @@ The frontend requires the following environment variables:
 
 ### Development (.env)
 
-VITE_API_URL=http://localhost:3000/api
-VITE_WS_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3000
 
 ### Production
 
-VITE_API_URL=https://your-backend-domain.com/api
-VITE_WS_URL=https://your-backend-domain.com
+VITE_API_BASE_URL=https://your-backend-domain.com
 
 ⚠️ The backend must allow CORS for the frontend CLIENT_URL.
 Example:

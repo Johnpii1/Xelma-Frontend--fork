@@ -6,7 +6,9 @@ export type ProfileSettingsValues = {
   streamerMode: boolean;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+import { API_BASE_URL } from './config';
+
+const API_BASE = API_BASE_URL;
 
 export async function fetchProfile(jwt: string): Promise<ProfileSettingsValues> {
   const res = await fetch(`${API_BASE}/api/user/profile`, {
