@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { roundsApi, type Round } from '../lib/api-client';
 import { normalizeApiError } from '../lib/api';
+import { API_BASE_URL } from '../lib/config';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+const API_BASE = API_BASE_URL;
 
 /** Fallback chat channel used when no active round is known. */
 export const CHAT_CHANNEL_FALLBACK = 'general';

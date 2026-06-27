@@ -1,7 +1,8 @@
 import { useAuthStore } from '../store/useAuthStore';
 import { notifyRateLimited } from './rate-limit-toast';
+import { API_BASE_URL } from './config';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '';
+const API_BASE = API_BASE_URL;
 const DEFAULT_TIMEOUT_MS = 15000;
 
 export interface ApiErrorShape {
