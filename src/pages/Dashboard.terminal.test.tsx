@@ -197,4 +197,43 @@ describe('Dashboard Terminal & Round Flows', () => {
       expect(onSelectRoundMock).toHaveBeenCalledWith(mockRounds[0]);
     });
   });
+
+  describe('Empty state when no active rounds exist', () => {
+    it('renders empty state when round list is empty (no active rounds)', () => {
+      useRoundStore.setState({
+        isRoundActive: false,
+        fetchActiveRound: vi.fn().mockResolvedValue(undefined),
+      });
+
+      render(
+        <MemoryRouter>
+          <Dashboard />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('No Active Rounds')).toBeInTheDocument();
+      expect(screen.getByText(/learn how the game works or refresh to check for new rounds/i)).toBeInTheDocument();
+    });
+
+    it('triggers refresh action on clicking refresh button', async () => {
+      const fetchActiveRoundMock = vi.fn().mockResolvedValue(undefined);
+      useRoundStore.setState({
+        isRoundActive: false,
+        fetchActiveRound: fetchActiveRoundMock,
+      });
+
+      render(
+        <MemoryRouter>
+          <Dashboard />
+        </MemoryRouter>
+      );
+
+      fetchActiveRoundMock.mockClear();
+
+      const refreshBtn = screen.getByRole('button', { name: /refresh/i });
+      fireEvent.click(refreshBtn);
+
+      expect(fetchActiveRoundMock).toHaveBeenCalledTimes(1);
+    });
+  });
 });
