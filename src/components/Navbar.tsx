@@ -99,7 +99,7 @@ export default function Navbar() {
                 return (
                   <li key={item.label}>
                     <span
-                      className="cursor-not-allowed rounded-lg px-4 py-2 text-sm font-medium text-gray-600"
+                      className="cursor-not-allowed rounded-lg px-4 py-2 text-sm font-medium text-gray-500"
                       title={item.tooltip}
                     >
                       {item.label}
@@ -200,9 +200,9 @@ export default function Navbar() {
                   return (
                     <span
                       key={item.label}
-                      className="cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium text-gray-600 bg-white/5"
+                      className="cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium text-gray-500 bg-white/5"
                     >
-                      {item.label} <span className="text-xs text-gray-500 ml-1">({item.tooltip})</span>
+                      {item.label} <span className="text-xs text-gray-400 ml-1">({item.tooltip})</span>
                     </span>
                   );
                 }
