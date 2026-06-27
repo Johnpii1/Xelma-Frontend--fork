@@ -3,6 +3,7 @@
 
 import type { MockRound } from '../types';
 import CountdownTimer from './CountdownTimer';
+import { formatVXLM, formatPercent } from '../lib/utils';
 
 const ASSET_ICONS: Record<string, string> = {
   BTC: '₿',
@@ -34,10 +35,8 @@ function poolSize(round: MockRound): number {
 
 export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps) {
   const total = poolSize(round);
-  const upPct =
-    round.mode === 'updown' && total > 0
-      ? Math.round(((round.poolUp ?? 0) / total) * 100)
-      : 0;
+  const upRatio = round.mode === 'updown' && total > 0 ? (round.poolUp ?? 0) / total : 0;
+  const upPct = Math.round(upRatio * 100);
   const downPct = round.mode === 'updown' ? 100 - upPct : 0;
 
   return (
@@ -91,8 +90,8 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
         </div>
       </div>
 
-      <p className="break-words text-sm font-semibold text-gray-300" data-testid="round-card-pool">
-        Pool: {total.toLocaleString()} vXLM
+      <p className="break-words mt-4 text-sm font-semibold text-gray-300" data-testid="round-card-pool">
+        Pool: {formatVXLM(total)}
       </p>
 
       {round.mode === 'updown' ? (
@@ -101,17 +100,17 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
             <div
               className="bg-[#2C4BFD] transition-all"
               style={{ width: `${upPct}%` }}
-              title={`UP ${upPct}%`}
+              title={`UP ${formatPercent(upPct / 100, 0)}`}
             />
             <div
               className="bg-rose-500 transition-all"
               style={{ width: `${downPct}%` }}
-              title={`DOWN ${downPct}%`}
+              title={`DOWN ${formatPercent(downPct / 100, 0)}`}
             />
           </div>
           <div className="mt-1 flex justify-between text-xs text-gray-500">
-            <span className="text-[#BEC7FE]">UP {upPct}%</span>
-            <span className="text-rose-400">DOWN {downPct}%</span>
+            <span className="text-[#BEC7FE]">UP {formatPercent(upPct / 100, 0)}</span>
+            <span className="text-rose-400">DOWN {formatPercent(downPct / 100, 0)}</span>
           </div>
         </div>
       ) : (

@@ -21,7 +21,7 @@ describe('RoundCard Component', () => {
     expect(screen.getByText('BTC/USD')).toBeInTheDocument();
     expect(screen.getByText('UP/DOWN')).toBeInTheDocument();
     expect(screen.getByText(/reference \$67,420/i)).toBeInTheDocument();
-    expect(screen.getByText(/pool: 4,000 vxlm/i)).toBeInTheDocument();
+    expect(screen.getByText(/pool: 4\.00k vxlm/i)).toBeInTheDocument();
   });
 
   it('renders UP/DOWN percentage layout for updown mode', () => {

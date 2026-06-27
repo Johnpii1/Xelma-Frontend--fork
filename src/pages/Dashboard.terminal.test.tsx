@@ -187,7 +187,7 @@ describe('Dashboard Terminal & Round Flows', () => {
 
       // Verify round details and pool statistics
       expect(screen.getByText(/reference \$67,420/i)).toBeInTheDocument();
-      expect(screen.getByText(/pool: 4,200 vxlm/i)).toBeInTheDocument();
+      expect(screen.getByText(/pool: 4\.20k vxlm/i)).toBeInTheDocument();
 
       // Submit prediction interaction from round card
       const submitButtons = screen.getAllByRole('button', { name: /submit prediction/i });

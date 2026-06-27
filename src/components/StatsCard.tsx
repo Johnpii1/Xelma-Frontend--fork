@@ -6,6 +6,7 @@ import type { MockUserStats } from '../types';
 import { useWalletStore, selectIsWalletConnected } from '../store/useWalletStore';
 import { claim_winnings } from '../lib/xelma-contract';
 import { toast } from 'sonner';
+import { formatVXLM } from '../lib/utils';
 
 interface StatsCardProps {
   stats: MockUserStats;
@@ -83,7 +84,7 @@ export default function StatsCard({ stats, isLoading, error, onRetry }: StatsCar
         <div className="flex items-center justify-between">
           <dt className="text-sm text-gray-400">Practice Balance</dt>
           <dd className="text-lg font-bold text-cyan-300">
-            {stats.balance.toLocaleString()} vXLM
+            {formatVXLM(stats.balance)}
           </dd>
         </div>
 

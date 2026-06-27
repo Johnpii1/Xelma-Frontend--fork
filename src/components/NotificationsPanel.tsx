@@ -16,7 +16,9 @@ const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
   const loadingList = useNotificationsStore((s) => s.loadingList);
   const errorList = useNotificationsStore((s) => s.errorList);
   const markAsRead = useNotificationsStore((s) => s.markAsRead);
+  const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead);
   const fetchList = useNotificationsStore((s) => s.fetchList);
+  const hasUnread = list.some((n) => !n.read);
 
   useEffect(() => {
     void fetchList();
@@ -44,19 +46,31 @@ const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
       tabIndex={-1}
       className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50"
     >
-      <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
+      <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2 flex-wrap">
         <h2 id={titleId} className="text-lg font-medium text-gray-900 dark:text-gray-100">
           Notifications
         </h2>
-        <button
-          type="button"
-          ref={closeButtonRef}
-          onClick={onClose}
-          aria-label="Close notifications"
-          className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C4BFD] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-        >
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          {hasUnread && (
+            <button
+              type="button"
+              aria-label="Mark all notifications as read"
+              onClick={() => void markAllAsRead()}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-[#2C4BFD] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C4BFD] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 transition-colors"
+            >
+              Mark all as read
+            </button>
+          )}
+          <button
+            type="button"
+            ref={closeButtonRef}
+            onClick={onClose}
+            aria-label="Close notifications"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C4BFD] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+          >
+            Close
+          </button>
+        </div>
       </div>
       <p id={descriptionId} className="sr-only">
         Review notifications and mark unread items as read.

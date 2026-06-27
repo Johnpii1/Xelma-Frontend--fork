@@ -89,6 +89,7 @@ export const notificationsApi = {
     getUnreadCount: () => apiFetch<{ unread: number }>('/api/notifications/unread-count'),
     getNotifications: () => apiFetch<NotificationItem[]>('/api/notifications'),
     markAsRead: (id: string) => apiFetch<void>(`/api/notifications/${id}/read`, { method: 'POST' }),
+    markAllAsRead: () => apiFetch<void>('/api/notifications/read-all', { method: 'POST' }),
 };
 
 
