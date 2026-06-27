@@ -19,6 +19,28 @@ interface BetModalProps {
 }
 
 type Step = 'confirm' | 'wallet_required' | 'preparing' | 'signing' | 'submitting' | 'syncing' | 'success' | 'error';
+type PredictionMode = 'direction' | 'precision';
+
+const PRICE_MIN = 0.0001;
+const PRICE_MAX = 10;
+const PRICE_DECIMALS = 4;
+
+function validateStake(value: string): string | null {
+  if (!value.trim()) return 'Enter a stake amount';
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return 'Stake must be greater than 0';
+  return null;
+}
+
+function validateExactPrice(value: string): string | null {
+  if (!value.trim()) return 'Enter an exact price target';
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return 'Exact price must be a valid number';
+  if (amount < PRICE_MIN || amount > PRICE_MAX) return `Exact price must be between ${PRICE_MIN} and ${PRICE_MAX}`;
+  const decimals = value.split('.')[1];
+  if (decimals && decimals.length > PRICE_DECIMALS) return `Use ${PRICE_DECIMALS} decimal places or fewer`;
+  return null;
+}
 
 export default function BetModal({ isOpen, onClose, predictionData, onSuccess }: BetModalProps) {
   const isConnected = useWalletStore(selectIsWalletConnected);
@@ -32,8 +54,22 @@ export default function BetModal({ isOpen, onClose, predictionData, onSuccess }:
   const [errorMsg, setErrorMsg] = useState('');
   const [txHash, setTxHash] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [mode, setMode] = useState<PredictionMode>(predictionData?.isLegend ? 'precision' : 'direction');
+  const [direction, setDirection] = useState<'UP' | 'DOWN'>(predictionData?.direction ?? 'UP');
+  const [stake, setStake] = useState(predictionData?.stake ?? '');
+  const [exactPrice, setExactPrice] = useState(predictionData?.exactPrice ?? '');
+  const [formError, setFormError] = useState('');
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevPredictionData, setPrevPredictionData] = useState(predictionData);
+  if (predictionData !== prevPredictionData && isOpen) {
+    setPrevPredictionData(predictionData);
+    setMode(predictionData?.isLegend ? 'precision' : 'direction');
+    setDirection(predictionData?.direction ?? 'UP');
+    setStake(predictionData?.stake ?? '');
+    setExactPrice(predictionData?.exactPrice ?? '');
+    setFormError('');
+  }
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
@@ -41,6 +77,12 @@ export default function BetModal({ isOpen, onClose, predictionData, onSuccess }:
       setStep(targetStep);
       setErrorMsg('');
       setTxHash('');
+      setPrevPredictionData(predictionData);
+      setMode(predictionData?.isLegend ? 'precision' : 'direction');
+      setDirection(predictionData?.direction ?? 'UP');
+      setStake(predictionData?.stake ?? '');
+      setExactPrice(predictionData?.exactPrice ?? '');
+      setFormError('');
     }
   }
 
@@ -64,6 +106,17 @@ export default function BetModal({ isOpen, onClose, predictionData, onSuccess }:
   };
 
   const handleConfirm = async () => {
+    const stakeError = validateStake(stake);
+    const exactPriceError = mode === 'precision' ? validateExactPrice(exactPrice) : null;
+
+    if (stakeError || exactPriceError) {
+      setFormError(stakeError || exactPriceError || 'Invalid prediction details');
+      return;
+    }
+
+    setFormError('');
+    setStep('preparing');
+
     if (!publicKey || !isConnected) {
       setStep('wallet_required');
       return;
@@ -75,19 +128,21 @@ export default function BetModal({ isOpen, onClose, predictionData, onSuccess }:
       };
 
       let result;
-      if (predictionData.isLegend && predictionData.exactPrice) {
+      const isPrecision = mode === 'precision';
+
+      if (isPrecision) {
         result = await place_precision_prediction(
           publicKey,
-          predictionData.direction,
-          predictionData.stake,
-          predictionData.exactPrice,
+          direction,
+          stake,
+          exactPrice,
           updateStatus
         );
       } else {
         result = await place_bet(
           publicKey,
-          predictionData.direction,
-          predictionData.stake,
+          direction,
+          stake,
           updateStatus
         );
       }
@@ -97,10 +152,10 @@ export default function BetModal({ isOpen, onClose, predictionData, onSuccess }:
 
       // Submit to backend
       await predictionsApi.submit({
-        direction: predictionData.direction,
-        stake: predictionData.stake,
-        isLegend: predictionData.isLegend,
-        exactPrice: predictionData.exactPrice,
+        direction,
+        stake,
+        isLegend: mode === 'precision',
+        exactPrice: mode === 'precision' ? exactPrice : undefined,
       });
 
       setStep('success');
@@ -164,29 +219,98 @@ export default function BetModal({ isOpen, onClose, predictionData, onSuccess }:
               </div>
             )}
 
-            <div className="space-y-3 bg-gray-850 p-4 rounded-xl border border-gray-800 mb-6">
+            <div className="mb-5 grid grid-cols-2 rounded-xl border border-gray-800 bg-gray-950/70 p-1" role="tablist" aria-label="Prediction input mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'direction'}
+                onClick={() => { setMode('direction'); setFormError(''); }}
+                className={`rounded-lg py-2 text-sm font-semibold transition ${mode === 'direction' ? 'bg-[#2C4BFD] text-white' : 'text-gray-400 hover:text-white'}`}
+              >
+                Direction
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'precision'}
+                onClick={() => { setMode('precision'); setFormError(''); }}
+                className={`rounded-lg py-2 text-sm font-semibold transition ${mode === 'precision' ? 'bg-[#2C4BFD] text-white' : 'text-gray-400 hover:text-white'}`}
+              >
+                Precision
+              </button>
+            </div>
+
+            <div className="space-y-4 bg-gray-850 p-4 rounded-xl border border-gray-800 mb-6">
               <div className="flex justify-between">
                 <span className="text-gray-400">Mode</span>
                 <span className="font-semibold">
-                  {predictionData.isLegend ? 'Legend Mode (Precision)' : 'UP/DOWN Match'}
+                  {mode === 'precision' ? 'Legend Mode (Precision)' : 'UP/DOWN Match'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Direction</span>
-                <span className={`font-bold ${predictionData.direction === 'UP' ? 'text-green-400' : 'text-red-400'}`}>
-                  {predictionData.direction}
-                </span>
+
+              <div>
+                <span className="mb-2 block text-sm text-gray-400">Direction</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['UP', 'DOWN'] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setDirection(option)}
+                      className={`rounded-lg border px-3 py-2 font-bold transition ${
+                        direction === option
+                          ? option === 'UP'
+                            ? 'border-green-400 bg-green-500/15 text-green-400'
+                            : 'border-red-400 bg-red-500/15 text-red-400'
+                          : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {predictionData.isLegend && predictionData.exactPrice && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Target Price</span>
-                  <span className="font-semibold text-yellow-400">${predictionData.exactPrice}</span>
+
+              {mode === 'precision' && (
+                <div>
+                  <label htmlFor="bet-modal-exact-price" className="mb-2 block text-sm text-gray-400">
+                    Exact Price Target
+                  </label>
+                  <input
+                    id="bet-modal-exact-price"
+                    type="number"
+                    inputMode="decimal"
+                    min={PRICE_MIN}
+                    max={PRICE_MAX}
+                    step="0.0001"
+                    value={exactPrice}
+                    onChange={(event) => { setExactPrice(event.target.value); setFormError(''); }}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none transition focus:border-yellow-400"
+                    placeholder="0.2295"
+                  />
+                  {exactPrice && <p className="mt-2 text-xs font-semibold text-yellow-400">${exactPrice}</p>}
                 </div>
               )}
-              <div className="flex justify-between border-t border-gray-800 pt-3">
-                <span className="text-gray-400">Stake</span>
-                <span className="font-bold text-cyan-400">{predictionData.stake} XLM</span>
+
+              <div className="border-t border-gray-800 pt-3">
+                <label htmlFor="bet-modal-stake" className="mb-2 block text-sm text-gray-400">Stake</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="bet-modal-stake"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.0000001"
+                    value={stake}
+                    onChange={(event) => { setStake(event.target.value); setFormError(''); }}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    placeholder="15"
+                  />
+                  <span className="font-bold text-cyan-400">XLM</span>
+                </div>
+                {stake && <p className="mt-2 text-xs text-cyan-300">{stake} XLM</p>}
               </div>
+
+              {formError && <p className="text-sm font-semibold text-red-400" role="alert">{formError}</p>}
             </div>
 
             <button
