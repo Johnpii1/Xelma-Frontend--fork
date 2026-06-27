@@ -303,6 +303,14 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto px-2.5 flex flex-col gap-3 bg-[#FAFAFA] dark:bg-gray-900 mx-2.5 p-3.5 rounded-xl overscroll-contain"
         >
+          {messages.length === 0 && (
+            <EmptyState
+              icon={<MessageCircle className="h-10 w-10 text-[#2C4BFD] dark:text-xelma-blue" />}
+              title="No messages yet"
+              description="Be the first to say something in the chat."
+              className="min-h-[160px] border-none bg-transparent backdrop-blur-none"
+            />
+          )}
           {messages.map((message) => (
             <div
               key={message.id}

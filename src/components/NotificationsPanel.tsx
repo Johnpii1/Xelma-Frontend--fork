@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useNotificationsStore } from '../store/useNotificationsStore';
 import { Clock, Check } from './icons';
-import { LoadingState, ErrorState, EmptyState } from './ui/StatusStates';
+import { LoadingState, ErrorState } from './ui/StatusStates';
+import { EmptyState } from './EmptyState';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
@@ -77,10 +78,10 @@ const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
         )}
         {!loadingList && !errorList && list.length === 0 && (
           <EmptyState
+            icon={<Clock className="h-12 w-12 text-gray-300 dark:text-gray-600" />}
             title="No notifications"
-            message="You're all caught up! New notifications will appear here."
-            icon={<Clock className="h-12 w-12 text-gray-300 dark:text-gray-700 mb-4" />}
-            className="p-4"
+            description="You're all caught up. New activity will show up here."
+            className="min-h-[200px]"
           />
         )}
         {!loadingList && !errorList && list.length > 0 && (
@@ -100,7 +101,7 @@ const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
                 {!n.read && (
                   <button
                     type="button"
-                    aria-label={`Mark notification “${n.title}” as read`}
+                    aria-label={`Mark notification "${n.title}" as read`}
                     onClick={() => markAsRead(n.id)}
                     className="shrink-0 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C4BFD] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
                   >
