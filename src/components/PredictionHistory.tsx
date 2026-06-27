@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { predictionsApi, type UserPrediction } from "../lib/api-client";
 import { LoadingState, ErrorState, EmptyState } from "./ui/StatusStates";
+import { formatVXLM } from "../lib/utils";
 
 interface PredictionHistoryProps {
   userId: string | null;
@@ -15,8 +16,9 @@ function formatDate(value?: string): string {
 
 function formatStake(value?: string | number): string {
   if (value === undefined || value === null || value === "") return "N/A";
-  if (typeof value === "number") return value.toString();
-  return value;
+  const num = typeof value === "number" ? value : Number(value);
+  if (Number.isFinite(num)) return formatVXLM(num);
+  return String(value);
 }
 
 export default function PredictionHistory({ userId }: PredictionHistoryProps) {

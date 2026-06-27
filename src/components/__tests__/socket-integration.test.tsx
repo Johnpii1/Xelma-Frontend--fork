@@ -15,12 +15,13 @@ vi.mock('../../lib/socket', () => {
     onChatMessage: vi.fn(),
     joinNotifications: vi.fn(),
     joinChat: vi.fn(),
+    leaveChat: vi.fn(),
     sendChat: vi.fn(),
     getSubscriptionCount: vi.fn(),
     hasActiveSubscriptions: vi.fn(),
     isConnected: vi.fn(),
   };
-  
+
   return {
     socketService: mockSocketService,
   };

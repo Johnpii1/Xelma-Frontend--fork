@@ -71,14 +71,14 @@ export default function Landing() {
             </a>
           </div>
 
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-[#808897]">
             New accounts start with 1,000 practice vXLM on Stellar testnet.
           </p>
 
           <div className="mx-auto mt-16 grid max-w-3xl gap-4 sm:grid-cols-3">
             <div className="glass-card rounded-xl p-5 text-left">
               <p className="text-2xl font-black text-white">{formatStat(rounds, 'rounds')}</p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-[#808897]">
                 Rounds Resolved
               </p>
             </div>
@@ -86,7 +86,7 @@ export default function Landing() {
               <p className="text-2xl font-black text-cyan-300">
                 {formatStat(vxlm, 'vxlm')} vXLM
               </p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-[#808897]">
                 Practice Volume
               </p>
             </div>
@@ -94,7 +94,7 @@ export default function Landing() {
               <p className="text-2xl font-black text-[#BEC7FE]">
                 {formatStat(players, 'players')}
               </p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-[#808897]">
                 Active Predictors
               </p>
             </div>
@@ -106,7 +106,28 @@ export default function Landing() {
         <HowItWorks />
       </div>
       <ModeCards />
-      <Footer />
+
+      <footer className="border-t border-white/10 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
+          <div className="text-center sm:text-left">
+            <p className="text-lg font-bold text-white">Xelma</p>
+            <p className="mt-1 text-sm text-[#808897]">
+              Collective market intelligence on Stellar
+            </p>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-[#808897]">
+            <span>MIT License</span>
+            <a
+              href="https://github.com/TevaLabs/Xelma-Frontend"
+              target="_blank"
+              rel="noreferrer"
+              className="text-cyan-400 hover:text-cyan-300"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

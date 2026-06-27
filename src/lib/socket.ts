@@ -247,6 +247,14 @@ export const socketService = {
     socket.emit("join:chat", channelId);
   },
 
+  leaveChat(channelId: string) {
+    if (!socket.connected) {
+      console.warn('Socket not connected, cannot leave chat');
+      return;
+    }
+    socket.emit("leave:chat", channelId);
+  },
+
   sendChat(payload: any) {
     if (!socket.connected) {
       console.warn('Socket not connected, cannot send chat message');

@@ -72,6 +72,25 @@ describe('Dashboard Terminal & Round Flows', () => {
       expect(screen.queryByText(/connect your wallet to submit predictions/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/connect your wallet to make predictions/i)).not.toBeInTheDocument();
     });
+
+    // Issue #175 — wallet banner must include a 44px touch target
+    it('Connect now link enforces a minimum 44px touch target and stacks on mobile', () => {
+      useWalletStore.setState({ status: 'idle', publicKey: null });
+
+      render(
+        <MemoryRouter>
+          <Dashboard />
+        </MemoryRouter>
+      );
+
+      const link = screen.getByTestId('dashboard-connect-now');
+      expect(link.className).toMatch(/inline-flex/);
+      expect(link.className).toMatch(/min-h-\[44px\]/);
+      // Banner container should stack vertically on small viewports and become a row on >=640px.
+      const wrapper = link.parentElement;
+      expect(wrapper?.className ?? '').toMatch(/flex-col/);
+      expect(wrapper?.className ?? '').toMatch(/sm:flex-row/);
+    });
   });
 
   describe('Submit prediction flow & Modal interactions', () => {
@@ -168,7 +187,7 @@ describe('Dashboard Terminal & Round Flows', () => {
 
       // Verify round details and pool statistics
       expect(screen.getByText(/reference \$67,420/i)).toBeInTheDocument();
-      expect(screen.getByText(/pool: 4,200 vxlm/i)).toBeInTheDocument();
+      expect(screen.getByText(/pool: 4\.20k vxlm/i)).toBeInTheDocument();
 
       // Submit prediction interaction from round card
       const submitButtons = screen.getAllByRole('button', { name: /submit prediction/i });

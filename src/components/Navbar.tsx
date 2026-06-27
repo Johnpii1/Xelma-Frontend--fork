@@ -7,7 +7,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useWalletStore, selectIsWalletConnected } from '../store/useWalletStore';
-import { mockUserStats } from '../data/mockData';
 import Logo from '../assets/logo.svg';
 
 interface NavLinkItem {
@@ -33,6 +32,7 @@ export default function Navbar() {
   const location = useLocation();
   const isConnected = useWalletStore(selectIsWalletConnected);
   const publicKey = useWalletStore((s) => s.publicKey);
+  const balance = useWalletStore((s) => s.balance);
   const status = useWalletStore((s) => s.status);
   const connect = useWalletStore((s) => s.connect);
   const checkConnection = useWalletStore((s) => s.checkConnection);
@@ -83,7 +83,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-[#BEC7FE]/10 bg-[#0A0F1A]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[#BEC7FE]/10 bg-[#0A0F1A]/90 backdrop-blur-xl navbar">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 shrink-0" onClick={closeMenu}>
             <img src={Logo} alt="Xelma" className="h-9 w-9" />
@@ -99,7 +99,7 @@ export default function Navbar() {
                 return (
                   <li key={item.label}>
                     <span
-                      className="cursor-not-allowed rounded-lg px-4 py-2 text-sm font-medium text-gray-600"
+                      className="cursor-not-allowed rounded-lg px-4 py-2 text-sm font-medium text-gray-500"
                       title={item.tooltip}
                     >
                       {item.label}
@@ -131,7 +131,7 @@ export default function Navbar() {
               {isConnected && publicKey ? (
                 <>
                   <span className="rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-200">
-                    {mockUserStats.balance.toLocaleString()} vXLM
+                    {balance ?? '…'}
                   </span>
                   <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300">
                     {truncateAddress(publicKey)}
@@ -200,9 +200,9 @@ export default function Navbar() {
                   return (
                     <span
                       key={item.label}
-                      className="cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium text-gray-600 bg-white/5"
+                      className="cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium text-gray-500 bg-white/5"
                     >
-                      {item.label} <span className="text-xs text-gray-500 ml-1">({item.tooltip})</span>
+                      {item.label} <span className="text-xs text-gray-400 ml-1">({item.tooltip})</span>
                     </span>
                   );
                 }
@@ -229,7 +229,7 @@ export default function Navbar() {
                   <div className="flex items-center justify-between px-2">
                     <span className="text-sm text-gray-400">Balance</span>
                     <span className="text-sm font-semibold text-cyan-200">
-                      {mockUserStats.balance.toLocaleString()} vXLM
+                      {balance ?? '…'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between px-2">

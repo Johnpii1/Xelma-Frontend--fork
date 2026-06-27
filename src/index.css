@@ -133,6 +133,14 @@ body {
   }
 }
 
+.navbar {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  /* optional left/right padding for notched devices */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

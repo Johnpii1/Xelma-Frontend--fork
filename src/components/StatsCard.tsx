@@ -6,12 +6,16 @@ import type { MockUserStats } from '../types';
 import { useWalletStore, selectIsWalletConnected } from '../store/useWalletStore';
 import { claim_winnings } from '../lib/xelma-contract';
 import { toast } from 'sonner';
+import { formatVXLM } from '../lib/utils';
 
 interface StatsCardProps {
   stats: MockUserStats;
+  isLoading?: boolean;
+  error?: string;
+  onRetry?: () => void;
 }
 
-export default function StatsCard({ stats }: StatsCardProps) {
+export default function StatsCard({ stats, isLoading, error, onRetry }: StatsCardProps) {
   const isWalletConnected = useWalletStore(selectIsWalletConnected);
   const publicKey = useWalletStore((s) => s.publicKey);
   const checkConnection = useWalletStore((s) => s.checkConnection);
@@ -43,6 +47,33 @@ export default function StatsCard({ stats }: StatsCardProps) {
     }
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className="glass-card rounded-2xl p-5" aria-labelledby="your-stats-title">
+        <p className="text-white">Loading...</p>
+      </section>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <section className="glass-card rounded-2xl p-5" aria-labelledby="your-stats-title">
+        <p className="text-red-500 mb-2">{error}</p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-2 w-full rounded-xl border py-2 text-sm font-semibold text-red-200 bg-red-500/20 border-red-400/50 hover:bg-red-500/30"
+          >
+            Retry
+          </button>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className="glass-card rounded-2xl p-5" aria-labelledby="your-stats-title">
       <h2 id="your-stats-title" className="text-lg font-bold text-white">
@@ -53,7 +84,7 @@ export default function StatsCard({ stats }: StatsCardProps) {
         <div className="flex items-center justify-between">
           <dt className="text-sm text-gray-400">Practice Balance</dt>
           <dd className="text-lg font-bold text-cyan-300">
-            {stats.balance.toLocaleString()} vXLM
+            {formatVXLM(stats.balance)}
           </dd>
         </div>
 
@@ -66,7 +97,7 @@ export default function StatsCard({ stats }: StatsCardProps) {
           <dt className="text-sm text-gray-400">Correct / Incorrect</dt>
           <dd className="font-semibold text-white">
             <span className="text-green-400">{stats.totalWins}</span>
-            <span className="text-gray-600"> / </span>
+            <span className="text-gray-500"> / </span>
             <span className="text-rose-400">{stats.totalLosses}</span>
           </dd>
         </div>
@@ -107,7 +138,7 @@ export default function StatsCard({ stats }: StatsCardProps) {
       >
         {isClaiming ? 'Claiming...' : 'Claim Rewards'}
       </button>
-      <p className="mt-2 text-center text-xs text-gray-600">
+      <p className="mt-2 text-center text-xs text-gray-400">
         {!isWalletConnected ? "Connect wallet to claim" : pendingWinnings === 0 ? "No pending rewards" : "Ready to claim"}
       </p>
     </section>

@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import { MessageCircle } from "lucide-react";
 import { socketService } from "../lib/socket";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
+import { useRoundStore, selectActiveChatChannelId } from "../store/useRoundStore";
+import EmptyState from "./EmptyState";
 
 interface Message {
   id: string;
@@ -116,6 +119,10 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isConnected } = useConnectionStatus();
+  // Round-scoped chat channel: derived from the active round so users in
+  // round #42 only see round #42 messages. Falls back to CHAT_CHANNEL_FALLBACK
+  // when there is no active round (issue #185).
+  const channelId = useRoundStore(selectActiveChatChannelId);
 
   const scrollToBottom = (force = false) => {
     if (!messagesContainerRef.current) return;
@@ -181,11 +188,14 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
     };
   }, []);
 
-  // Listen for incoming chat:message events via socket
+  // Listen for incoming chat:message events via socket and stay subscribed
+  // to the channel for the active round. When the active round changes, the
+  // cleanup function leaves the previous channel and the next effect run
+  // joins the new one (issue #185).
   useEffect(() => {
     // Ensure socket is connected
     socketService.connect();
-    
+
     const unsubscribe = socketService.onChatMessage((data: ApiMessage) => {
       setMessages((prev) => {
         // De-duplicate: server echoes our own sends back through chat:message
@@ -194,13 +204,15 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
       });
     });
 
-    // Join chat channel
-    socketService.joinChat("general"); // TODO: Use dynamic channel ID
+    // Join this round's chat channel (or the fallback "general" channel
+    // when no active round is available).
+    socketService.joinChat(channelId);
 
     return () => {
       unsubscribe();
+      socketService.leaveChat(channelId);
     };
-  }, []);
+  }, [channelId]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim() || !isConnected) return;
@@ -303,6 +315,14 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto px-2.5 flex flex-col gap-3 bg-[#FAFAFA] dark:bg-gray-900 mx-2.5 p-3.5 rounded-xl overscroll-contain"
         >
+          {messages.length === 0 && (
+            <EmptyState
+              icon={<MessageCircle className="h-10 w-10 text-[#2C4BFD] dark:text-xelma-blue" />}
+              title="No messages yet"
+              description="Be the first to say something in the chat."
+              className="min-h-[160px] border-none bg-transparent backdrop-blur-none"
+            />
+          )}
           {messages.map((message) => (
             <div
               key={message.id}
