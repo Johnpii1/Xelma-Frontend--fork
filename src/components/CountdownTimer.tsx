@@ -44,6 +44,7 @@ export default function CountdownTimer({
   }, [seconds, onExpire]);
 
   const isUrgent = seconds > 0 && seconds < 120;
+  const isExpired = seconds <= 0;
 
   return (
     <span
@@ -52,7 +53,7 @@ export default function CountdownTimer({
       } ${className}`}
       aria-live="polite"
     >
-      {formatTime(seconds)}
+      {isExpired ? 'Ended' : formatTime(seconds)}
     </span>
   );
 }
