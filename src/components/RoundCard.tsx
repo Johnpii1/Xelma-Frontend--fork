@@ -41,25 +41,28 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
   const downPct = round.mode === 'updown' ? 100 - upPct : 0;
 
   return (
-    <article className="glass-card rounded-2xl p-5 transition-all duration-300">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
+    <article
+      className="glass-card flex min-w-0 flex-col gap-4 rounded-2xl p-4 transition-all duration-300 sm:p-5"
+      data-testid="round-card"
+    >
+      <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2C4BFD]/15 text-lg font-bold text-[#BEC7FE]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#2C4BFD]/15 text-lg font-bold text-[#BEC7FE]"
             aria-hidden
           >
             {ASSET_ICONS[round.asset]}
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-bold text-white">{round.asset}/USD</h3>
-            <p className="text-xs text-gray-500">
+            <p className="truncate text-xs text-gray-500">
               Reference ${round.startPrice.toLocaleString()}
             </p>
           </div>
         </div>
 
         <span
-          className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+          className={`self-start rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide sm:self-auto ${
             round.mode === 'updown'
               ? 'bg-[#2C4BFD]/15 text-[#BEC7FE]'
               : 'bg-cyan-500/15 text-cyan-300'
@@ -67,27 +70,33 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
         >
           {round.mode === 'updown' ? 'UP/DOWN' : 'PRECISION'}
         </span>
-      </div>
+      </header>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div
+        className="flex min-w-0 flex-col gap-2 text-sm text-gray-400 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3"
+        data-testid="round-card-meta"
+      >
         <div className="flex items-center gap-2">
-          <span className={`status-dot ${getStatusMeta(round, round.closesInSeconds).dotClass}`} />
+          <span
+            className={`status-dot ${getStatusMeta(round, round.closesInSeconds).dotClass}`}
+            aria-hidden="true"
+          />
           <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
             {getStatusMeta(round, round.closesInSeconds).label}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 whitespace-nowrap text-sm text-gray-400">
           <span>Resolves in</span>
           <CountdownTimer initialSeconds={round.closesInSeconds} />
         </div>
       </div>
 
-      <p className="mt-4 text-sm font-semibold text-gray-300">
+      <p className="break-words text-sm font-semibold text-gray-300" data-testid="round-card-pool">
         Pool: {total.toLocaleString()} vXLM
       </p>
 
       {round.mode === 'updown' ? (
-        <div className="mt-3">
+        <div className="mt-1">
           <div className="flex h-2 overflow-hidden rounded-full bg-gray-800">
             <div
               className="bg-[#2C4BFD] transition-all"
@@ -106,7 +115,7 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
           </div>
         </div>
       ) : (
-        <p className="mt-3 text-sm text-cyan-300">
+        <p className="mt-1 text-sm text-cyan-300">
           {round.predictionCount ?? 0} forecasts submitted
         </p>
       )}
@@ -115,7 +124,8 @@ export default function RoundCard({ round, onSubmitPrediction }: RoundCardProps)
         type="button"
         disabled={round.closesInSeconds <= 0}
         onClick={() => onSubmitPrediction(round)}
-        className="btn-primary mt-5 w-full rounded-xl py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+        className="btn-primary mt-2 flex min-h-[44px] w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+        data-testid="round-card-submit"
       >
         Submit Prediction
       </button>

@@ -84,9 +84,15 @@ const Dashboard = () => {
     <div className="xelma-grid-bg min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {!isWalletConnected && (
-          <div className="mb-6 rounded-xl border border-[#2C4BFD]/30 bg-[#2C4BFD]/10 px-4 py-3 text-sm text-[#BEC7FE]">
-            Connect your wallet to submit predictions.{' '}
-            <Link to="/connect" className="font-semibold underline hover:text-white">
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-[#2C4BFD]/30 bg-[#2C4BFD]/10 p-4 text-sm text-[#BEC7FE] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4">
+            <p className="leading-relaxed" data-testid="dashboard-wallet-prompt">
+              Connect your wallet to submit predictions.
+            </p>
+            <Link
+              to="/connect"
+              data-testid="dashboard-connect-now"
+              className="btn-primary no-underline inline-flex min-h-[44px] w-full items-center justify-center rounded-lg px-5 py-2 text-sm font-bold sm:w-auto"
+            >
               Connect now
             </Link>
           </div>
