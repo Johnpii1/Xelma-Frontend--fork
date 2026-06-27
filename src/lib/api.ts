@@ -1,4 +1,5 @@
 import { useAuthStore } from '../store/useAuthStore';
+import { notifyRateLimited } from './rate-limit-toast';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 const DEFAULT_TIMEOUT_MS = 15000;
@@ -15,6 +16,8 @@ export class ApiError extends Error {
   code?: string;
   details?: unknown;
   endpoint?: string;
+  /** Parsed `Retry-After` value (seconds) for 429 responses, when provided. */
+  retryAfterSeconds?: number | null;
 
   constructor(message: string, status: number, code?: string, details?: unknown, endpoint?: string) {
     super(message);
@@ -56,8 +59,32 @@ function defaultMessageForStatus(status: number, endpoint: string): string {
   if (status === 401) return 'Your session has expired. Please reconnect and try again.';
   if (status === 403) return 'You do not have permission to perform this action.';
   if (status === 404) return 'Requested resource was not found.';
+  if (status === 429) return 'Too many requests. Please slow down and try again shortly.';
   if (status >= 500) return 'Server error. Please try again shortly.';
   return `Request failed: ${endpoint}`;
+}
+
+/**
+ * Parse an HTTP `Retry-After` header into seconds.
+ *
+ * Supports both the delta-seconds form (`"120"`) and the HTTP-date form
+ * (`"Wed, 21 Oct 2015 07:28:00 GMT"`). Returns `null` when absent or unparseable.
+ */
+function parseRetryAfter(response: Response, now: number = Date.now()): number | null {
+  const header = response.headers.get('Retry-After');
+  if (!header) return null;
+
+  const seconds = Number(header);
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, Math.round(seconds));
+  }
+
+  const dateMs = Date.parse(header);
+  if (!Number.isNaN(dateMs)) {
+    return Math.max(0, Math.round((dateMs - now) / 1000));
+  }
+
+  return null;
 }
 
 function createApiError(endpoint: string, status: number, payload: ErrorPayload | null): ApiError {
@@ -112,6 +139,10 @@ export async function apiFetch<T>(endpoint: string, options: ApiFetchOptions = {
     if (!response.ok) {
       const payload = await parseErrorPayload(response);
       const apiError = createApiError(endpoint, response.status, payload);
+      if (response.status === 429) {
+        apiError.retryAfterSeconds = parseRetryAfter(response);
+        notifyRateLimited(apiError.retryAfterSeconds);
+      }
       if (import.meta.env.DEV) {
         console.debug('[apiFetch:error]', {
           endpoint,

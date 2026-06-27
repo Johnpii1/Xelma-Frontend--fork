@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const clearAuthMock = vi.fn();
+const notifyRateLimitedMock = vi.fn();
 
 vi.mock('../store/useAuthStore', () => ({
   useAuthStore: {
@@ -11,10 +12,15 @@ vi.mock('../store/useAuthStore', () => ({
   },
 }));
 
+vi.mock('./rate-limit-toast', () => ({
+  notifyRateLimited: notifyRateLimitedMock,
+}));
+
 describe('apiFetch', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     clearAuthMock.mockReset();
+    notifyRateLimitedMock.mockReset();
   });
 
   it('returns JSON on 200', async () => {
@@ -75,6 +81,46 @@ describe('apiFetch', () => {
       status: 500,
       message: 'Server error. Please try again shortly.',
     });
+  });
+
+  it('surfaces a rate-limit message and notifies the user on 429', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 429,
+          headers: { 'Retry-After': '30' },
+        })
+      )
+    );
+    const { apiFetch } = await import('./api');
+    await expect(apiFetch('/api/test')).rejects.toMatchObject({
+      status: 429,
+      message: 'Too many requests. Please slow down and try again shortly.',
+      retryAfterSeconds: 30,
+    });
+    expect(notifyRateLimitedMock).toHaveBeenCalledTimes(1);
+    expect(notifyRateLimitedMock).toHaveBeenCalledWith(30);
+  });
+
+  it('passes null retry-after when the header is absent on 429', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(null, { status: 429 }))
+    );
+    const { apiFetch } = await import('./api');
+    await expect(apiFetch('/api/test')).rejects.toMatchObject({ status: 429 });
+    expect(notifyRateLimitedMock).toHaveBeenCalledWith(null);
+  });
+
+  it('does not notify the rate limiter for non-429 errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('Internal Error', { status: 500 }))
+    );
+    const { apiFetch } = await import('./api');
+    await expect(apiFetch('/api/test')).rejects.toMatchObject({ status: 500 });
+    expect(notifyRateLimitedMock).not.toHaveBeenCalled();
   });
 
   it('throws timeout code on aborted request', async () => {
