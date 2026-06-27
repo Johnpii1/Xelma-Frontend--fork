@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import { MessageCircle } from "lucide-react";
 import { socketService } from "../lib/socket";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import { useRoundStore, selectActiveChatChannelId } from "../store/useRoundStore";
+import EmptyState from "./EmptyState";
 
 interface Message {
   id: string;

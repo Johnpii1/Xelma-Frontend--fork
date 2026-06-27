@@ -76,7 +76,7 @@ export default function Navbar() {
     }
     return () => {
       document.body.style.overflow = '';
-    return () => document.body.style.overflow = '';
+    };
   }, [isMobileMenuOpen]);
 
   const closeMenu = useCallback(() => setIsMobileMenuOpen(false), []);

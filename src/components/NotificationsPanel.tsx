@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNotificationsStore } from '../store/useNotificationsStore';
 import { Clock, Check } from './icons';
-import { LoadingState, ErrorState } from './ui/StatusStates';
-import { EmptyState } from './EmptyState';
+import { LoadingState, ErrorState, EmptyState } from './ui/StatusStates';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
@@ -78,10 +77,10 @@ const NotificationsPanel: React.FC<{ id: string; onClose: () => void }> = ({
         )}
         {!loadingList && !errorList && list.length === 0 && (
           <EmptyState
-            icon={<Clock className="h-12 w-12 text-gray-300 dark:text-gray-600" />}
+            icon={<Clock className="h-12 w-12 text-gray-300 dark:text-gray-700 mb-4" />}
             title="No notifications"
-            description="You're all caught up. New activity will show up here."
-            className="min-h-[200px]"
+            message="You're all caught up! New notifications will appear here."
+            className="p-4"
           />
         )}
         {!loadingList && !errorList && list.length > 0 && (
