@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Navbar from './components/Navbar';
 import PageSkeleton from './components/PageSkeleton';
@@ -8,6 +8,7 @@ import RouteFallback from './components/RouteFallback';
 import LazyBoundary from './components/LazyBoundary';
 import ErrorBoundary from './components/ErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
+import Footer from './components/Footer';
 
 const Dashboard = lazy(() => import(/* webpackChunkName: "dashboard" */ './pages/Dashboard'));
 const LegacyDashboard = lazy(() => import(/* webpackChunkName: "legacy-dashboard" */ './pages/LegacyDashboard'));
@@ -18,8 +19,13 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Pools = lazy(() => import('./pages/Pools'));
 
 function App() {
+  const { pathname } = useLocation();
+  // Landing renders its own Footer at the bottom of its bespoke layout.
+  // All other routes share the global session footer for consistent branding.
+  const showGlobalFooter = pathname !== '/';
+
   return (
-    <div className="min-h-screen bg-[#0A0F1A] font-sans text-[#F3F4F6]">
+    <div className="flex min-h-screen flex-col bg-[#0A0F1A] font-sans text-[#F3F4F6]">
       <OfflineBanner />
       <Navbar />
       <ErrorBoundary>
