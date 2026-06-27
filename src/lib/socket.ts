@@ -1,7 +1,12 @@
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../store/useAuthStore";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+/** Strips a trailing /api segment so Socket.IO connects to the server root, not the REST prefix. */
+export function normalizeSocketUrl(url: string): string {
+  return url.replace(/\/api\/?$/, '');
+}
+
+const SOCKET_URL = normalizeSocketUrl(import.meta.env.VITE_API_URL ?? "http://localhost:3000");
 
 // Connection status types
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
