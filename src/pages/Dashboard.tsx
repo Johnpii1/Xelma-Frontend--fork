@@ -105,7 +105,10 @@ const Dashboard = () => {
         )}
 
         {!isLoading && !isRoundActive && (
-          <EmptyState onRefresh={() => { const { fetchActiveRound } = useRoundStore.getState(); void fetchActiveRound(); }} />
+          <EmptyState
+            title="No active round"
+            description="Check back soon for the next prediction round."
+          />
         )}
 
         {!isLoading && isRoundActive && (

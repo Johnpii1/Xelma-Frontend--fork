@@ -5,6 +5,8 @@ import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import { useRoundStore, selectActiveChatChannelId } from "../store/useRoundStore";
 import EmptyState from "./EmptyState";
 
+const MAX_MESSAGE_LENGTH = 500;
+
 interface Message {
   id: string;
   username: string;
@@ -215,7 +217,7 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
   }, [channelId]);
 
   const handleSendMessage = () => {
-    if (!inputValue.trim() || !isConnected) return;
+    if (!inputValue.trim() || !isConnected || inputValue.length > MAX_MESSAGE_LENGTH) return;
 
     // Emit chat:send to the server instead of pushing to local state.
     // The server will broadcast chat:message back to all clients in the
@@ -360,6 +362,7 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
             <textarea
               ref={textareaRef}
               rows={1}
+              maxLength={MAX_MESSAGE_LENGTH}
               className={`flex-1 border-none bg-transparent outline-none font-['DM_Sans'] text-sm text-[#292D32] dark:text-gray-200 placeholder-[#9B9B9B] resize-none overflow-y-auto py-2 min-h-[36px] max-h-[120px] ${
                 !isConnected ? 'opacity-50' : ''
               }`}
@@ -372,14 +375,26 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
             />
             <button
               className={`flex items-center justify-center min-w-[36px] w-9 h-9 p-0 bg-[#2C4BFD] border-none rounded-lg cursor-pointer transition-all duration-200 hover:opacity-90 hover:scale-105 shrink-0 ${
-                !isConnected ? 'opacity-50 cursor-not-allowed' : ''
+                !isConnected || inputValue.length > MAX_MESSAGE_LENGTH ? 'opacity-50 cursor-not-allowed' : ''
               }`}
-              disabled={!isConnected}
+              disabled={!isConnected || inputValue.length > MAX_MESSAGE_LENGTH}
               onClick={handleSendMessage}
               aria-label="Send message"
             >
               <SendIcon />
             </button>
+          </div>
+          <div className="flex items-center justify-between mt-1.5 px-1">
+            {inputValue.length > MAX_MESSAGE_LENGTH && (
+              <span className="text-xs text-red-500 dark:text-red-400">
+                Message too long (max {MAX_MESSAGE_LENGTH} characters)
+              </span>
+            )}
+            <span className={`text-xs ml-auto ${
+              inputValue.length > MAX_MESSAGE_LENGTH ? 'text-red-500 dark:text-red-400' : 'text-[#9B9B9B] dark:text-gray-400'
+            }`}>
+              {inputValue.length}/{MAX_MESSAGE_LENGTH}
+            </span>
           </div>
         </div>
       </aside>

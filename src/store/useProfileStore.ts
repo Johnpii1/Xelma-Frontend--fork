@@ -95,9 +95,9 @@ export const useProfileStore = create<ProfileState>((set) => ({
 }));
 
 useAuthStore.subscribe(
-  (state) => state.jwt,
-  (jwt, prevJwt) => {
-    if (jwt && jwt !== prevJwt) {
+  (state) => {
+    const jwt = state.jwt;
+    if (jwt) {
       useProfileStore.getState().loadProfile();
     }
   },

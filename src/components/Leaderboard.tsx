@@ -361,7 +361,7 @@ const Leaderboard = () => {
         ) : sortedUsers.length === 0 ? (
           <EmptyState
             title="No leaderboard data yet"
-            description="Be the first to make a prediction and claim the top spot."
+            message="Be the first to make a prediction and claim the top spot."
             className="max-w-xl mx-auto"
           />
         ) : null}

@@ -52,6 +52,7 @@ function App() {
           </Suspense>
         </LazyBoundary>
       </ErrorBoundary>
+      {showGlobalFooter && <Footer />}
       <Toaster richColors position="top-center" theme="dark" />
     </div>
   );

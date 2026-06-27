@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HowItWorks from '../components/HowItWorks';
 import ModeCards from '../components/ModeCards';
-import Footer from '../components/Footer';
 import { mockLandingStats } from '../data/mockData';
 
 function useCountUp(target: number, durationMs = 1800) {
