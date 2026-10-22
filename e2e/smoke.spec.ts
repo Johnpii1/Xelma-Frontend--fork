@@ -125,4 +125,17 @@ test.describe('Smoke Tests - Critical Routes', () => {
     await expect(mainHeading).toBeVisible();
     await expect(mainHeading).toContainText('Leaderboard');
   });
+  test('offline banner appears when the browser loses network connectivity', async ({ page, context }) => {
+    await page.goto('/');
+    await context.setOffline(true);
+
+    await expect(page.getByRole('alert').filter({ hasText: 'Connection lost' })).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Restore network connectivity so later tests are not affected by this context state.
+    await context.setOffline(false);
+    await expect(page.getByRole('alert').filter({ hasText: 'Connection lost' })).toBeVisible();
+  });
+
 });
